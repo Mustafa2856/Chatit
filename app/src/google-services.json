@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "627613800518",
+    "project_id": "chat-it-7cafe",
+    "storage_bucket": "chat-it-7cafe.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:627613800518:android:eaa08bb85b1b64b7771247",
+        "android_client_info": {
+          "package_name": "com.example.chatit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "627613800518-lo51c9ftetcl0ov8db9rmvbdgblahkcc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDNZaw7VJ2tncvW50wdua5Ms0vm0Lqfew"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "627613800518-lo51c9ftetcl0ov8db9rmvbdgblahkcc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

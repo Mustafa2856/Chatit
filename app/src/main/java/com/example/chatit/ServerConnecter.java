@@ -19,6 +19,7 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -147,7 +148,8 @@ public class ServerConnecter extends Thread {
                             JSONObject obj = res.getJSONObject(0);
                             String email = obj.getJSONObject("sender").getString("email");
                             String message = obj.getJSONObject("message").getString("message");
-                            ((Chatlist)activity).Recievedmessages(email,message);
+                            String tmp = obj.getString("timeStamp");
+                            ((Chatlist)activity).Recievedmessages(email,message,tmp);
                         }
                     }else{
 

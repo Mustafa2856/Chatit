@@ -12,6 +12,9 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/Theme.Chatit.NoActionBar">
+        <activity android:name=".Chat">
+        </activity>
+
         <service
                 android:name=".ServerConnect"
                 android:enabled="true"

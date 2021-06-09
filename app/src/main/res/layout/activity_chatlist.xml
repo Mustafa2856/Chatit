@@ -33,15 +33,12 @@
             android:layout_marginStart="16dp"/>
 
     <TextView
-            android:text="TextView"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:id="@+id/Name1"
             app:layout_constraintStart_toEndOf="@+id/imageView4"
-            android:layout_marginLeft="16dp"
             android:layout_marginStart="16dp"
             app:layout_constraintEnd_toEndOf="@+id/toolbar"
-            android:layout_marginRight="16dp"
             android:layout_marginEnd="16dp"
             app:layout_constraintBottom_toBottomOf="@+id/toolbar"
             app:layout_constraintTop_toTopOf="parent"

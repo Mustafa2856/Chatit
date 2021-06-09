@@ -115,7 +115,7 @@ public class ServerConnecter extends Thread {
                     InputStream in = connection.getInputStream();
                     BufferedReader br = new BufferedReader(new InputStreamReader(in));
                     String response = br.readLine();
-                    if (!response.equals("-1")) ((MainActivity) activity).askName();
+                    //if (!response.equals("-1")) ((MainActivity) activity).askName();
 
                 } else {
                     Log.d("TAG", connection.getResponseMessage());
@@ -142,6 +142,10 @@ public class ServerConnecter extends Thread {
                         BufferedReader br = new BufferedReader(new InputStreamReader(in));
                         String response = br.readLine();
                         //Log.println(Log.ERROR,"Error",response);
+                        if(response == null){
+                            queue.add(new Pair<>("",""));
+                            continue;
+                        }
                         JSONArray res = new JSONArray(response);
                         int msags = res.length();
                         for(int i=0;i<msags;i++){
@@ -149,7 +153,7 @@ public class ServerConnecter extends Thread {
                             String email = obj.getJSONObject("sender").getString("email");
                             String message = obj.getJSONObject("message").getString("message");
                             String tmp = obj.getString("timeStamp");
-                            ((Chatlist)activity).Recievedmessages(email,message,tmp);
+                            //((Chatlist)activity).Recievedmessages(email,message,tmp);
                         }
                     }else{
 

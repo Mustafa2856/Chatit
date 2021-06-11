@@ -13,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import java.io.*;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -59,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
             }
         },new IntentFilter("com.exmaple.chatit.OPENASKNAME"));
         ServerConnect.enqueueWork(this,ServerConnect.class,1000,regUser);
+        //this.startService(regUser);
     }
 
     public void UpdateUI(String email,String Password){
@@ -79,6 +82,19 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        try{
+            FileInputStream fin = openFileInput("usr");
+            BufferedReader br = new BufferedReader(new InputStreamReader(fin));
+            String email = br.readLine();
+            String Password = br.readLine();
+            if(email!=null && Password!=null){
+                Password = HashPassword(Password);
+                //Check_Password_with_db(email,Password);
+                UpdateUI(email,Password);
+            }
+        }catch(IOException e){
+
+        }
         Login = findViewById(R.id.Login);
         Login.setOnClickListener(v -> {
             String Email = ((EditText)findViewById(R.id.Email)).getText().toString();

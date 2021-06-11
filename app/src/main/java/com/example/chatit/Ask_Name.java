@@ -30,7 +30,8 @@ public class Ask_Name extends AppCompatActivity {
                 startActivityForResult(openchatlist,0);
             }
         },new IntentFilter("com.exmaple.chatit.OPENCHATLIST"));
-        ServerConnect.enqueueWork(this,ServerConnect.class,1000,chn);
+        //ServerConnect.enqueueWork(this,ServerConnect.class,1000,chn);
+        this.startService(chn);
     }
 
     @Override

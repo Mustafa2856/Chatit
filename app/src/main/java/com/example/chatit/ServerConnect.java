@@ -15,7 +15,11 @@ import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.TimeZone;
 
 public class ServerConnect extends JobIntentService {
 
@@ -60,6 +64,12 @@ public class ServerConnect extends JobIntentService {
                         openchatlist.putExtra("email",intent.getStringExtra("email"));
                         openchatlist.putExtra("Password",intent.getStringExtra("Password"));
                         LocalBroadcastManager.getInstance(this).sendBroadcast(openchatlist);
+                        chats = new Chats();
+                        FileOutputStream fout = openFileOutput("usr",MODE_PRIVATE);
+                        fout.write(intent.getStringExtra("email").getBytes(StandardCharsets.UTF_8));
+                        fout.write("\n".getBytes(StandardCharsets.UTF_8));
+                        fout.write(intent.getStringExtra("Password").getBytes(StandardCharsets.UTF_8));
+                        fout.close();
                         //Log.println(Log.ERROR,"TAG", "1");
                     }else{
                         //Log.println(Log.ERROR,"TAG", "2");
@@ -145,7 +155,7 @@ public class ServerConnect extends JobIntentService {
                 e.printStackTrace();
             }
         }
-        else if (op == Operations.CHATS){
+        else if(op == Operations.CHATS){
             try {
                 URL url = new URL("https://chatit-server.herokuapp.com/chats");
                 HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
@@ -175,9 +185,11 @@ public class ServerConnect extends JobIntentService {
                                 chats = new Chats();
                                 FileOutputStream fout = openFileOutput("usr",MODE_PRIVATE);
                                 fout.write(intent.getStringExtra("email").getBytes(StandardCharsets.UTF_8));
+                                fout.write("\n".getBytes(StandardCharsets.UTF_8));
+                                fout.write(intent.getStringExtra("Password").getBytes(StandardCharsets.UTF_8));
                                 fout.close();
                             }
-                            //Log.println(Log.ERROR,"RESPONSE REC","response.toString()");
+                           // Log.println(Log.ERROR,"RESPONSE REC","response.toString()");
                             FileOutputStream fout = openFileOutput("msgs",mode);
                             PrintWriter pw = new PrintWriter(fout);
                             for(int i=0;i<msgs;i++){
@@ -185,7 +197,9 @@ public class ServerConnect extends JobIntentService {
                                 String email = obj.getJSONObject("sender").getString("email");
                                 String uname = obj.getJSONObject("sender").getString("uname");
                                 String message = obj.getJSONObject("message").getString("message");
-                                Timestamp tmp = Timestamp.valueOf(obj.getString("timeStamp").substring(0,10) + " " + obj.getString("timeStamp").substring(11,19));
+                                Log.println(Log.ERROR,"tmp",obj.getString("timeStamp"));
+                                Timestamp tmp = new Timestamp(Timestamp.valueOf(obj.getString("timeStamp").substring(0,10) + " " + obj.getString("timeStamp").substring(11,19)).getTime() + TimeZone.getDefault().getRawOffset());
+                                //Timestamp tmp = Timestamp.valueOf(obj.getString("timeStamp"));
                                 chats.addMessage(uname,email,message,tmp);
                                 pw.println(email);
                                 pw.println(uname);
@@ -194,17 +208,21 @@ public class ServerConnect extends JobIntentService {
                             }
                             pw.close();
                             fout.close();
-                        }catch(JSONException e){
+                            if(msgs>0){
+                                Intent notifyUI = new Intent();
+                                notifyUI.setAction("com.example.chatit.CHATSYNC");
+                                LocalBroadcastManager.getInstance(this).sendBroadcast(notifyUI);
+
+                                //this.startService(chats);
+                            }
+                            Intent chats = new Intent(this,ServerConnect.class);
+                            chats.setAction("CHATS");
+                            chats.putExtra("email",intent.getStringExtra("email"));
+                            chats.putExtra("Password",intent.getStringExtra("Password"));
+                            ServerConnect.enqueueWork(this,ServerConnect.class,1000,chats);
+                        }catch(JSONException e) {
                             e.printStackTrace();
                         }
-                        Intent notifyUI = new Intent();
-                        notifyUI.setAction("com.example.chatit.CHATSYNC");
-                        LocalBroadcastManager.getInstance(this).sendBroadcast(notifyUI);
-                        Intent chats = new Intent(this,ServerConnect.class);
-                        chats.setAction("CHATS");
-                        chats.putExtra("email",intent.getStringExtra("email"));
-                        chats.putExtra("Password",intent.getStringExtra("Password"));
-                        ServerConnect.enqueueWork(this,ServerConnect.class,1000,chats);
                     }
                 } else {
                     Log.println(Log.ERROR,"TAG", "3");
@@ -214,26 +232,102 @@ public class ServerConnect extends JobIntentService {
             }
         }
         else if(op == Operations.LOADCHATOFFLINE){
+            LoadChats();
+            Intent notifyUI = new Intent();
+            notifyUI.setAction("com.example.chatit.CHATSYNC");
+            LocalBroadcastManager.getInstance(this).sendBroadcast(notifyUI);
+            Intent chats = new Intent(this,ServerConnect.class);
+            chats.setAction("CHATS");
+            chats.putExtra("email",intent.getStringExtra("email"));
+            chats.putExtra("Password",intent.getStringExtra("Password"));
+            //ServerConnect.enqueueWork(this,ServerConnect.class,1000,chats);
+            //this.startService()
+        }
+        else if(op == Operations.MESSAGE){
             try {
-                LoadChats();
+                URL url = new URL("https://chatit-server.herokuapp.com/message");
+                HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+                connection.setRequestMethod("POST");
+                connection.setDoOutput(true);
+                connection.setDoInput(true);
+                connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                String data = "Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("Password") + "&ReceiverEmail=" + intent.getStringExtra("remail") + "&message=" + intent.getStringExtra("msg");
+                byte[] out = data.getBytes(StandardCharsets.UTF_8);
+                OutputStream stream = connection.getOutputStream();
+                stream.write(out);
+                Log.println(Log.ERROR,"res","response");
+                //Log.println(Log.ERROR,"TAG", connection.getResponseCode()+"");
+                if (connection.getResponseCode() == 200) {
+                    //Log.println(Log.ERROR,"TAG", "connection.getResponseMessage()");
+                    InputStream in = connection.getInputStream();
+                    String response;
+                    BufferedReader br = new BufferedReader(new InputStreamReader(in));
+                    response = br.readLine();
+                    Log.println(Log.ERROR,"res",response);
+                    if(!response.equals("2"))return;
+                    Timestamp tmp = new Timestamp(System.currentTimeMillis());
+                    chats.sendMessage(intent.getStringExtra("uname"),intent.getStringExtra("remail"),intent.getStringExtra("msg"),tmp);
+                    int mode = MODE_PRIVATE;
+                    if(checkUserStored(intent.getStringExtra("email")))mode |= MODE_APPEND;
+                    else{
+                        chats = new Chats();
+                        FileOutputStream fout = openFileOutput("usr",MODE_PRIVATE);
+                        fout.write(intent.getStringExtra("email").getBytes(StandardCharsets.UTF_8));
+                        fout.write("\n".getBytes(StandardCharsets.UTF_8));
+                        fout.write(intent.getStringExtra("Password").getBytes(StandardCharsets.UTF_8));
+                        fout.close();
+                    }
+                    FileOutputStream fout = openFileOutput("sm",mode);
+                    PrintWriter pw = new PrintWriter(fout);
+                    pw.println(intent.getStringExtra("remail"));
+                    pw.println(intent.getStringExtra("uname"));
+                    pw.println(intent.getStringExtra("msg"));
+                    pw.println(tmp);
+                    pw.close();
+                    fout.close();
+                    Intent notifyUI = new Intent();
+                    notifyUI.setAction("com.example.chatit.CHATSYNC");
+                    LocalBroadcastManager.getInstance(this).sendBroadcast(notifyUI);
+                } else {
+                    //Log.println(Log.ERROR,"TAG", "3");
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private void LoadChats() throws IOException {
-        FileInputStream fin = openFileInput("msgs");
-        BufferedReader br = new BufferedReader(new InputStreamReader(fin));
-        String email,uname,message,tmp;
-        while((email=br.readLine())!=null){
-            uname = br.readLine();
-            message = br.readLine();
-            tmp = br.readLine();
-            chats.addMessage(uname,email,message,Timestamp.valueOf(tmp.substring(0,10) + " " + tmp.substring(11,19)));
+    private void LoadChats() {
+        try {
+            FileInputStream fin = openFileInput("msgs");
+            BufferedReader br = new BufferedReader(new InputStreamReader(fin));
+            String email,uname,message,tmp;
+            while((email=br.readLine())!=null){
+                uname = br.readLine();
+                message = br.readLine();
+                tmp = br.readLine();
+                chats.addMessage(uname,email,message,Timestamp.valueOf(tmp.substring(0,10) + " " + tmp.substring(11,19)));
+            }
+            br.close();
+            fin.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        br.close();
-        fin.close();
+        try {
+            FileInputStream fin = openFileInput("sm");
+            BufferedReader br = new BufferedReader(new InputStreamReader(fin));
+            String email,uname,message,tmp;
+            while((email=br.readLine())!=null){
+                uname = br.readLine();
+                message = br.readLine();
+                tmp = br.readLine();
+                chats.sendMessage(uname,email,message,Timestamp.valueOf(tmp.substring(0,10) + " " + tmp.substring(11,19)));
+            }
+            br.close();
+            fin.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static Chats getChats(){

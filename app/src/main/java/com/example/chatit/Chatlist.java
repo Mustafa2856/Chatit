@@ -37,7 +37,7 @@ public class Chatlist extends AppCompatActivity {
 
     private void updateUI() {
         List<Map.Entry<String,Pair<Timestamp, String>>> list = new ArrayList<>(chats.display_list.entrySet());
-        Collections.sort(list, (o1, o2) -> o1.getValue().first.compareTo(o2.getValue().first));
+        Collections.sort(list, (o1, o2) -> -o1.getValue().first.compareTo(o2.getValue().first));
         chats_display.removeAllViews();
         for(Map.Entry<String,Pair<Timestamp, String>> value:list){
             TextView txt = new TextView(this);
@@ -69,6 +69,7 @@ public class Chatlist extends AppCompatActivity {
         chatsync.putExtra("email",this.getIntent().getStringExtra("email"));
         chatsync.putExtra("Password",this.getIntent().getStringExtra("Password"));
         ServerConnect.enqueueWork(this,ServerConnect.class,1000,chatsync);
+        //this.startService(chatsync);
     }
 
     @Override

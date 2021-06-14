@@ -15,7 +15,7 @@
     <EditText
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:inputType="textPersonName"
+            android:inputType="textMultiLine"
             android:ems="10"
             android:id="@+id/chatbox"
             app:layout_constraintEnd_toStartOf="@+id/send"

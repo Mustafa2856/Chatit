@@ -4,13 +4,16 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
+import android.graphics.Color;
+import android.os.Build;
+import android.text.InputType;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
+import android.view.Gravity;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.TextView;
+import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -23,11 +26,11 @@ import java.util.Objects;
 
 public class Chat extends AppCompatActivity {
 
-    private ArrayList<Pair<Timestamp,String>> chats;
+    private ArrayList<Pair<Pair<Timestamp,String>,Boolean>> chats;
     private BroadcastReceiver reciever = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            updateUI();
+            ((EditText)findViewById(R.id.chatbox)).setText("");updateUI();
         }
     };
 
@@ -36,14 +39,16 @@ public class Chat extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
         TextView veiw = findViewById(R.id.textView4);
+
         veiw.setText(this.getIntent().getStringExtra("uname"));
-        chats =(ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail"))==null)?null: (ArrayList<Pair<Timestamp, String>>) ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail")).clone();
+        /*chats =(ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail"))==null)?null: (ArrayList<Pair<Timestamp, String>>) ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail")).clone();
         if(chats == null)chats = new ArrayList<>();
         try{
             chats.addAll(Objects.requireNonNull(ServerConnect.getChats().sent.get(this.getIntent().getStringExtra("remail"))));
         }catch (NullPointerException e){
 
-        }
+        }*/
+        //fillChats();
         EditText chatbox = findViewById(R.id.chatbox);
         Button send = findViewById(R.id.send);
         send.setOnClickListener(v -> {
@@ -56,7 +61,7 @@ public class Chat extends AppCompatActivity {
             i.putExtra("uname",this.getIntent().getStringExtra("uname"));
             i.putExtra("msg",message);
             ServerConnect.enqueueWork(this,ServerConnect.class,1000,i);
-            Log.println(Log.ERROR,"this","is called??");
+            //Log.println(Log.ERROR,"this","is called??");
             //this.startService(i);
             //chats.add(new Pair<>(new Timestamp(System.currentTimeMillis()),message));
             //updateUI();
@@ -70,25 +75,61 @@ public class Chat extends AppCompatActivity {
         //this.startService(chatsync);
         LocalBroadcastManager.getInstance(this).registerReceiver(reciever,new IntentFilter("com.example.chatit.CHATSYNC"));
     }
+    @Override
+    protected void onResume() {
+        LocalBroadcastManager.getInstance(this).registerReceiver(reciever,new IntentFilter("com.example.chatit.CHATSYNC"));
+        super.onResume();
+    }
 
     private void updateUI(){
-        chats =(ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail"))==null)?null: (ArrayList<Pair<Timestamp, String>>) ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail")).clone();
+        /*chats =(ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail"))==null)?null: (ArrayList<Pair<Timestamp, String>>) ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail")).clone();
         if(chats == null)chats = new ArrayList<>();
         try{
             chats.addAll(Objects.requireNonNull(ServerConnect.getChats().sent.get(this.getIntent().getStringExtra("remail"))));
         }catch (NullPointerException e){
 
-        }
-        Collections.sort(chats, (o1, o2) -> o1.first.compareTo(o2.first));
+        }*/
+        fillChats();
+        Collections.sort(chats, (o1, o2) -> o1.first.first.compareTo(o2.first.first));
         LinearLayout chat_display = findViewById(R.id.chatv);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        params.setMargins(10,10,10,10);
+        //params.gravity()
+        //chat_display.setLayoutParams(params);
+        //chat_display.setPadding(5,5,5,5);
+        findViewById(R.id.chat).setBackgroundColor(Color.CYAN);
         chat_display.removeAllViews();
-        for(Pair<Timestamp,String> chat:chats){
+        for(Pair<Pair<Timestamp,String>,Boolean> chat:chats){
             TextView txt = new TextView(this);
-            txt.setText(chat.second+"\n\t"+chat.first.toString()+"\n");
+            txt.setText(chat.first.second+"\n"+chat.first.first.toString().substring(11,16));
+            txt.setBackgroundColor(Color.LTGRAY);
+            txt.setPadding(10,10,10,10);
+            //Log.println(Log.ERROR,"Width",Resources.getSystem().getDisplayMetrics().widthPixels/2+"");
+            //txt.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+            //txt.setWidth(Resources.getSystem().getDisplayMetrics().widthPixels/2);
+            //if(chat.second)params.gravity = Gravity.RIGHT;
+            txt.setLayoutParams(params);
+            txt.setEllipsize(TextUtils.TruncateAt.END);
             chat_display.addView(txt);
+            if(chat.second)((LinearLayout.LayoutParams)txt.getLayoutParams()).gravity=Gravity.RIGHT;
+            txt.requestLayout();
         }
-        Log.println(Log.WARN,"MSGSCOUNT",""+chats.size());
+        //Log.println(Log.WARN,"MSGSCOUNT",""+chats.size());
         findViewById(R.id.chat).post(() -> findViewById(R.id.chat).scrollTo(0, findViewById(R.id.chat).getBottom()));
+    }
+
+    private void fillChats() {
+        chats = new ArrayList<>();
+        ArrayList<Pair<Timestamp, String>> c = ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail"));
+        if(c!=null){
+        for(Pair<Timestamp, String> m:c){
+            chats.add(new Pair<>(new Pair<>(m.first,m.second),false));
+        }}
+        c = ServerConnect.getChats().sent.get(this.getIntent().getStringExtra("remail"));
+        if(c!=null){
+        for(Pair<Timestamp, String> m:c){
+            chats.add(new Pair<>(new Pair<>(m.first,m.second),true));
+        }}
     }
 
     @Override

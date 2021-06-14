@@ -23,7 +23,7 @@ public class Chats {
             display_list.put(email,new Pair<>(tmp,message));
         }else{
             messages.get(email).add(new Pair<>(tmp,message));
-            if(display_list.get(email).first.compareTo(tmp)<=0)
+            if(display_list.get(email)!=null && display_list.get(email).first.compareTo(tmp)<=0)
                 display_list.put(email,new Pair<>(tmp,message));
         }
 
@@ -34,6 +34,7 @@ public class Chats {
             sent.put(remail, new ArrayList<>());
         }
         sent.get(remail).add(new Pair<>(tmp,message));
-        display_list.put(remail,new Pair<>(tmp,message));
+        if(display_list.get(remail)!=null && display_list.get(remail).first.compareTo(tmp)<=0)
+            display_list.put(remail,new Pair<>(tmp,message));
     }
 }

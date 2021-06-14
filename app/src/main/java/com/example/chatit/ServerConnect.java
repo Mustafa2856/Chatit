@@ -189,7 +189,7 @@ public class ServerConnect extends JobIntentService {
                                 fout.write(intent.getStringExtra("Password").getBytes(StandardCharsets.UTF_8));
                                 fout.close();
                             }
-                           // Log.println(Log.ERROR,"RESPONSE REC","response.toString()");
+                            //Log.println(Log.ERROR,"RESPONSE REC","response.toString()");
                             FileOutputStream fout = openFileOutput("msgs",mode);
                             PrintWriter pw = new PrintWriter(fout);
                             for(int i=0;i<msgs;i++){
@@ -197,14 +197,17 @@ public class ServerConnect extends JobIntentService {
                                 String email = obj.getJSONObject("sender").getString("email");
                                 String uname = obj.getJSONObject("sender").getString("uname");
                                 String message = obj.getJSONObject("message").getString("message");
-                                Log.println(Log.ERROR,"tmp",obj.getString("timeStamp"));
+                                //Log.println(Log.ERROR,"tmp",obj.getString("timeStamp"));
                                 Timestamp tmp = new Timestamp(Timestamp.valueOf(obj.getString("timeStamp").substring(0,10) + " " + obj.getString("timeStamp").substring(11,19)).getTime() + TimeZone.getDefault().getRawOffset());
                                 //Timestamp tmp = Timestamp.valueOf(obj.getString("timeStamp"));
                                 chats.addMessage(uname,email,message,tmp);
                                 pw.println(email);
                                 pw.println(uname);
-                                pw.println(message);
-                                pw.println(tmp.toString());
+                                String msg = message;
+                                msg = msg.replaceAll("[\r\n]","\u259f");
+                                Log.e("MSG",msg);
+                                pw.println(msg);
+                                pw.println(tmp);
                             }
                             pw.close();
                             fout.close();
@@ -255,7 +258,7 @@ public class ServerConnect extends JobIntentService {
                 byte[] out = data.getBytes(StandardCharsets.UTF_8);
                 OutputStream stream = connection.getOutputStream();
                 stream.write(out);
-                Log.println(Log.ERROR,"res","response");
+                //Log.println(Log.ERROR,"res","response");
                 //Log.println(Log.ERROR,"TAG", connection.getResponseCode()+"");
                 if (connection.getResponseCode() == 200) {
                     //Log.println(Log.ERROR,"TAG", "connection.getResponseMessage()");
@@ -263,7 +266,7 @@ public class ServerConnect extends JobIntentService {
                     String response;
                     BufferedReader br = new BufferedReader(new InputStreamReader(in));
                     response = br.readLine();
-                    Log.println(Log.ERROR,"res",response);
+                    //Log.println(Log.ERROR,"res",response);
                     if(!response.equals("2"))return;
                     Timestamp tmp = new Timestamp(System.currentTimeMillis());
                     chats.sendMessage(intent.getStringExtra("uname"),intent.getStringExtra("remail"),intent.getStringExtra("msg"),tmp);
@@ -281,7 +284,9 @@ public class ServerConnect extends JobIntentService {
                     PrintWriter pw = new PrintWriter(fout);
                     pw.println(intent.getStringExtra("remail"));
                     pw.println(intent.getStringExtra("uname"));
-                    pw.println(intent.getStringExtra("msg"));
+                    String msg = intent.getStringExtra("msg");
+                    msg = msg.replaceAll("[\r\n]","\u259f");
+                    pw.println(msg);
                     pw.println(tmp);
                     pw.close();
                     fout.close();
@@ -305,7 +310,9 @@ public class ServerConnect extends JobIntentService {
             while((email=br.readLine())!=null){
                 uname = br.readLine();
                 message = br.readLine();
+                message = message.replaceAll("\u259f","\r\n");
                 tmp = br.readLine();
+                Log.e("tmp",tmp);
                 chats.addMessage(uname,email,message,Timestamp.valueOf(tmp.substring(0,10) + " " + tmp.substring(11,19)));
             }
             br.close();
@@ -320,7 +327,9 @@ public class ServerConnect extends JobIntentService {
             while((email=br.readLine())!=null){
                 uname = br.readLine();
                 message = br.readLine();
+                message = message.replaceAll("\u259f","\r\n");
                 tmp = br.readLine();
+                Log.e("tmp",tmp);
                 chats.sendMessage(uname,email,message,Timestamp.valueOf(tmp.substring(0,10) + " " + tmp.substring(11,19)));
             }
             br.close();

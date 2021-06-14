@@ -24,7 +24,7 @@ import java.util.TimeZone;
 public class ServerConnect extends JobIntentService {
 
     static final int JOB_ID = 1000;
-    public enum Operations {LOGIN,REGISTER,CHANGENAME,MESSAGE,CHATS,LOADCHATOFFLINE}
+    public enum Operations {LOGIN,REGISTER,CHANGENAME,MESSAGE,CHATS,LOADCHATOFFLINE,FINDUSER}
     public static Chats chats;
 
     @Override
@@ -295,6 +295,39 @@ public class ServerConnect extends JobIntentService {
                     LocalBroadcastManager.getInstance(this).sendBroadcast(notifyUI);
                 } else {
                     //Log.println(Log.ERROR,"TAG", "3");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else if(op == Operations.FINDUSER){
+            try {
+                URL url = new URL("https://chatit-server.herokuapp.com/finduser");
+                HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+                connection.setRequestMethod("POST");
+                connection.setDoOutput(true);
+                connection.setDoInput(true);
+                connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                String data = "uname=" + intent.getStringExtra("uname");
+                byte[] out = data.getBytes(StandardCharsets.UTF_8);
+                OutputStream stream = connection.getOutputStream();
+                stream.write(out);
+                //Log.println(Log.ERROR,"TAG", connection.getResponseCode()+"");
+                if (connection.getResponseCode() == 200) {
+                    //Log.println(Log.ERROR,"TAG", "connection.getResponseMessage()");
+                    InputStream in = connection.getInputStream();
+                    String response;
+                    BufferedReader br = new BufferedReader(new InputStreamReader(in));
+                    response = br.readLine();
+                    //Log.println(Log.ERROR,"TAG", response);
+                    if(response!=null){
+                        Intent usrlist = new Intent();
+                        usrlist.setAction("com.example.chatit.USRLIST");
+                        usrlist.putExtra("list",response);
+                        LocalBroadcastManager.getInstance(this).sendBroadcast(usrlist);
+                    }
+                } else {
+                    Log.println(Log.ERROR,"TAG", "3");
                 }
             } catch (IOException e) {
                 e.printStackTrace();

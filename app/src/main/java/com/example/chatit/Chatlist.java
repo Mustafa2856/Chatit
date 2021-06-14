@@ -12,6 +12,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -41,7 +42,10 @@ public class Chatlist extends AppCompatActivity {
         chats_display.removeAllViews();
         for(Map.Entry<String,Pair<Timestamp, String>> value:list){
             TextView txt = new TextView(this);
-            txt.setText(MessageFormat.format("{0}\n{1}: {2}", chats.usernames.get(value.getKey()), value.getValue().first, value.getValue().second));
+            String msg = value.getValue().second;
+            if(msg.length()>10)msg = msg.substring(0,10) + "...";
+            txt.setText(MessageFormat.format("{0}\n{1}: {2}", chats.usernames.get(value.getKey()), value.getValue().first, msg));
+            txt.setPadding(10,10,10,10);
             txt.setOnClickListener(v -> {
                 Intent intent = new Intent(this,Chat.class);
                 intent.putExtra("email",this.getIntent().getStringExtra("email"));
@@ -60,6 +64,13 @@ public class Chatlist extends AppCompatActivity {
         setContentView(R.layout.activity_chatlist);
         name = findViewById(R.id.Name1);
         chats_display = findViewById(R.id.chatlist);
+        FloatingActionButton fab = findViewById(R.id.floatingActionButton);
+        fab.setOnClickListener(v -> {
+            Intent intent = new Intent(this,Select_User.class);
+            intent.putExtra("email",this.getIntent().getStringExtra("email"));
+            intent.putExtra("Password",this.getIntent().getStringExtra("Password"));
+            startActivityForResult(intent,0);
+        });
         LocalBroadcastManager.getInstance(this).registerReceiver(reciever,new IntentFilter("com.example.chatit.CHATSYNC"));
         Intent loadChat = new Intent(this,ServerConnect.class);
         loadChat.setAction("LOADCHATOFFLINE");

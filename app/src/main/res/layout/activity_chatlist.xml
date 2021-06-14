@@ -61,4 +61,15 @@
                 android:id="@+id/chatlist"
                 android:visibility="visible"/>
     </ScrollView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            app:srcCompat="@drawable/ic_launcher_foreground"
+            android:id="@+id/floatingActionButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

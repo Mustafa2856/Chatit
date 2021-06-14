@@ -13,14 +13,19 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/Theme.Chatit.NoActionBar">
+        <activity
+                android:name=".Select_User"
+                android:label="@string/title_activity_select__user"
+                android:theme="@style/Theme.Chatit.NoActionBar.NoActionBar">
+        </activity>
         <activity android:name=".Chat">
         </activity>
 
         <service
                 android:name=".ServerConnect"
                 android:enabled="true"
-                android:permission="android.permission.BIND_JOB_SERVICE"
-                android:exported="false">
+                android:exported="false"
+                android:permission="android.permission.BIND_JOB_SERVICE">
         </service>
 
         <activity

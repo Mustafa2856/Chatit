@@ -36,5 +36,9 @@ public class Chats {
         sent.get(remail).add(new Pair<>(tmp,message));
         if(display_list.get(remail)!=null && display_list.get(remail).first.compareTo(tmp)<=0)
             display_list.put(remail,new Pair<>(tmp,message));
+        else if(display_list.get(remail)==null){
+            usernames.put(remail,uname);
+            display_list.put(remail,new Pair<>(tmp,message));
+        }
     }
 }

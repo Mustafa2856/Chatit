@@ -54,11 +54,11 @@ public class ServerConnect extends JobIntentService {
                 if (connection.getResponseCode() == 200) {
                     //Log.println(Log.ERROR,"TAG", "connection.getResponseMessage()");
                     InputStream in = connection.getInputStream();
-                    String response = "";
-                    while (in.available() > 0) {
-                        response += (char) in.read();
-                    }
-                    if (!response.equals("-1")){
+                    String response;
+                    BufferedReader br = new BufferedReader(new InputStreamReader(in));
+                    response = br.readLine();
+                    if (response!=null && !response.equals("-1")){
+                        //Log.println(Log.ERROR,"res","response: " + response);
                         Intent openchatlist = new Intent();
                         openchatlist.setAction("com.exmaple.chatit.OPENCHAT");
                         openchatlist.putExtra("email",intent.getStringExtra("email"));
@@ -97,11 +97,10 @@ public class ServerConnect extends JobIntentService {
                 if (connection.getResponseCode() == 200) {
                     //Log.println(Log.ERROR,"TAG", "connection.getResponseMessage()");
                     InputStream in = connection.getInputStream();
-                    String response = "";
-                    while (in.available() > 0) {
-                        response += (char) in.read();
-                    }
-                    if (!response.equals("-1")){
+                    String response;
+                    BufferedReader br = new BufferedReader(new InputStreamReader(in));
+                    response = br.readLine();
+                    if (response!=null && !response.equals("-1")){
                         Intent openan = new Intent();
                         openan.setAction("com.exmaple.chatit.OPENASKNAME");
                         openan.putExtra("email",intent.getStringExtra("email"));
@@ -134,11 +133,10 @@ public class ServerConnect extends JobIntentService {
                 if (connection.getResponseCode() == 200) {
                     //Log.println(Log.ERROR,"TAG", "connection.getResponseMessage()");
                     InputStream in = connection.getInputStream();
-                    String response = "";
-                    while (in.available() > 0) {
-                        response += (char) in.read();
-                    }
-                    if (!response.equals("-1")){
+                    String response;
+                    BufferedReader br = new BufferedReader(new InputStreamReader(in));
+                    response = br.readLine();
+                    if (response!=null && !response.equals("-1")){
                         Intent openan = new Intent();
                         openan.setAction("com.exmaple.chatit.OPENCHATLIST");
                         openan.putExtra("email",intent.getStringExtra("email"));
@@ -267,6 +265,7 @@ public class ServerConnect extends JobIntentService {
                     BufferedReader br = new BufferedReader(new InputStreamReader(in));
                     response = br.readLine();
                     //Log.println(Log.ERROR,"res",response);
+                    if(response == null)return;
                     if(!response.equals("2"))return;
                     Timestamp tmp = new Timestamp(System.currentTimeMillis());
                     chats.sendMessage(intent.getStringExtra("uname"),intent.getStringExtra("remail"),intent.getStringExtra("msg"),tmp);
@@ -345,7 +344,7 @@ public class ServerConnect extends JobIntentService {
                 message = br.readLine();
                 message = message.replaceAll("\u259f","\r\n");
                 tmp = br.readLine();
-                Log.e("tmp",tmp);
+                //Log.e("tmp",tmp);
                 chats.addMessage(uname,email,message,Timestamp.valueOf(tmp.substring(0,10) + " " + tmp.substring(11,19)));
             }
             br.close();
@@ -362,7 +361,7 @@ public class ServerConnect extends JobIntentService {
                 message = br.readLine();
                 message = message.replaceAll("\u259f","\r\n");
                 tmp = br.readLine();
-                Log.e("tmp",tmp);
+                //Log.e("tmp",tmp);
                 chats.sendMessage(uname,email,message,Timestamp.valueOf(tmp.substring(0,10) + " " + tmp.substring(11,19)));
             }
             br.close();

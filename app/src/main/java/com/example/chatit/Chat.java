@@ -97,12 +97,13 @@ public class Chat extends AppCompatActivity {
         //params.gravity()
         //chat_display.setLayoutParams(params);
         //chat_display.setPadding(5,5,5,5);
-        findViewById(R.id.chat).setBackgroundColor(Color.CYAN);
+        findViewById(R.id.chat).setBackgroundColor(Color.WHITE);
         chat_display.removeAllViews();
         for(Pair<Pair<Timestamp,String>,Boolean> chat:chats){
             TextView txt = new TextView(this);
             txt.setText(chat.first.second+"\n"+chat.first.first.toString().substring(11,16));
-            txt.setBackgroundColor(Color.LTGRAY);
+            txt.setBackgroundColor(Color.argb(255,211,247,198));
+            txt.setTextColor(Color.BLACK);
             txt.setPadding(10,10,10,10);
             //Log.println(Log.ERROR,"Width",Resources.getSystem().getDisplayMetrics().widthPixels/2+"");
             //txt.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);

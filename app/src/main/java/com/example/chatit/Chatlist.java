@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Pair;
@@ -55,6 +56,14 @@ public class Chatlist extends AppCompatActivity {
                 startActivityForResult(intent,0);
             });
             chats_display.addView(txt);
+            View v = new View(this);
+            v.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    5
+            ));
+            v.setBackgroundColor(Color.parseColor("#B3B3B3"));
+
+            chats_display.addView(v);
         }
     }
 

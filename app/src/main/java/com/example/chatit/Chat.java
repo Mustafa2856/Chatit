@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.text.InputType;
 import android.text.TextUtils;
@@ -39,8 +40,13 @@ public class Chat extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
         TextView veiw = findViewById(R.id.textView4);
-
         veiw.setText(this.getIntent().getStringExtra("uname"));
+        veiw.setOnClickListener(v -> {
+            Intent openusrinfo = new Intent(Chat.this,User_info.class);
+            openusrinfo.putExtra("remail",this.getIntent().getStringExtra("remail"));
+            openusrinfo.putExtra("uname",this.getIntent().getStringExtra("uname"));
+            startActivityForResult(openusrinfo,0);
+        });
         /*chats =(ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail"))==null)?null: (ArrayList<Pair<Timestamp, String>>) ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail")).clone();
         if(chats == null)chats = new ArrayList<>();
         try{
@@ -53,6 +59,7 @@ public class Chat extends AppCompatActivity {
         Button send = findViewById(R.id.send);
         send.setOnClickListener(v -> {
             String message = chatbox.getText().toString();
+            if(!message.equals("")){
             Intent i = new Intent(this,ServerConnect.class);
             i.setAction("MESSAGE");
             i.putExtra("email",this.getIntent().getStringExtra("email"));
@@ -65,6 +72,7 @@ public class Chat extends AppCompatActivity {
             //this.startService(i);
             //chats.add(new Pair<>(new Timestamp(System.currentTimeMillis()),message));
             //updateUI();
+            }
         });
         updateUI();
         Intent chatsync = new Intent(this,ServerConnect.class);
@@ -102,21 +110,26 @@ public class Chat extends AppCompatActivity {
         for(Pair<Pair<Timestamp,String>,Boolean> chat:chats){
             TextView txt = new TextView(this);
             txt.setText(chat.first.second+"\n"+chat.first.first.toString().substring(11,16));
-            txt.setBackgroundColor(Color.argb(255,211,247,198));
+
             txt.setTextColor(Color.BLACK);
             txt.setPadding(10,10,10,10);
+            GradientDrawable shape =  new GradientDrawable();
+            shape.setCornerRadius( 16 );
+            shape.setColor(Color.argb(255,211,247,198));
+            txt.setBackground(shape);
             //Log.println(Log.ERROR,"Width",Resources.getSystem().getDisplayMetrics().widthPixels/2+"");
             //txt.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
             //txt.setWidth(Resources.getSystem().getDisplayMetrics().widthPixels/2);
             //if(chat.second)params.gravity = Gravity.RIGHT;
             txt.setLayoutParams(params);
             txt.setEllipsize(TextUtils.TruncateAt.END);
+
             chat_display.addView(txt);
             if(chat.second)((LinearLayout.LayoutParams)txt.getLayoutParams()).gravity=Gravity.RIGHT;
             txt.requestLayout();
         }
         //Log.println(Log.WARN,"MSGSCOUNT",""+chats.size());
-        findViewById(R.id.chat).post(() -> findViewById(R.id.chat).scrollTo(0, findViewById(R.id.chat).getBottom()));
+        findViewById(R.id.chat).post(() -> findViewById(R.id.chat).scrollTo(0, findViewById(R.id.chatv).getBottom()));
     }
 
     private void fillChats() {

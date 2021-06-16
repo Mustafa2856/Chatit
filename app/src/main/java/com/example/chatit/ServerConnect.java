@@ -203,7 +203,7 @@ public class ServerConnect extends JobIntentService {
                                 pw.println(uname);
                                 String msg = message;
                                 msg = msg.replaceAll("[\r\n]","\u259f");
-                                Log.e("MSG",msg);
+                                //Log.e("MSG",msg);
                                 pw.println(msg);
                                 pw.println(tmp);
                             }

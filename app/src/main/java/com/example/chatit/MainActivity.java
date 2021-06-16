@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
             openchatlist.putExtra("email",email);
             openchatlist.putExtra("Password",Password);
             startActivityForResult(openchatlist,0);
+            finish();
     }
 
     public void askName(String email,String Password){
@@ -76,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
         askname.putExtra("email",email);
         askname.putExtra("Password",Password);
         startActivityForResult(askname,0);
+        finish();
     }
 
     @Override

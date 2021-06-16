@@ -13,6 +13,8 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/Theme.Chatit.NoActionBar">
+        <activity android:name=".User_info">
+        </activity>
         <activity
                 android:name=".Select_User"
                 android:label="@string/title_activity_select__user"

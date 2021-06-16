@@ -44,6 +44,7 @@ public class Chatlist extends AppCompatActivity {
         for(Map.Entry<String,Pair<Timestamp, String>> value:list){
             TextView txt = new TextView(this);
             String msg = value.getValue().second;
+            msg = msg.replaceAll("\n"," ");
             if(msg.length()>10)msg = msg.substring(0,10) + "...";
             txt.setText(MessageFormat.format("{0}\n{1}: {2}", chats.usernames.get(value.getKey()), value.getValue().first, msg));
             txt.setPadding(10,10,10,10);

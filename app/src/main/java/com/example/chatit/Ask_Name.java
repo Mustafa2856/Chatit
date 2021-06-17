@@ -18,7 +18,8 @@ public class Ask_Name extends AppCompatActivity {
         Intent chn = new Intent(this,ServerConnect.class);
         chn.setAction("CHANGENAME");
         chn.putExtra("email",this.getIntent().getStringExtra("email"));
-        chn.putExtra("Password",this.getIntent().getStringExtra("Password"));
+        chn.putExtra("Password",MainActivity.HashPassword(this.getIntent().getStringExtra("Password")));
+        chn.putExtra("op",this.getIntent().getStringExtra("Password"));
         chn.putExtra("uname",name);
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override
@@ -30,8 +31,8 @@ public class Ask_Name extends AppCompatActivity {
                 startActivityForResult(openchatlist,0);
             }
         },new IntentFilter("com.exmaple.chatit.OPENCHATLIST"));
-        //ServerConnect.enqueueWork(this,ServerConnect.class,1000,chn);
-        this.startService(chn);
+        ServerConnect.enqueueWork(this,ServerConnect.class,1000,chn);
+        //this.startService(chn);
     }
 
     @Override

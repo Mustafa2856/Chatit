@@ -52,6 +52,7 @@ public class Chatlist extends AppCompatActivity {
                 Intent intent = new Intent(this,Chat.class);
                 intent.putExtra("email",this.getIntent().getStringExtra("email"));
                 intent.putExtra("Password",this.getIntent().getStringExtra("Password"));
+                //intent.putExtra("op",this.getIntent().getStringExtra("Password"));
                 intent.putExtra("remail",value.getKey());
                 intent.putExtra("uname",chats.usernames.get(value.getKey()));
                 startActivityForResult(intent,0);
@@ -88,7 +89,8 @@ public class Chatlist extends AppCompatActivity {
         Intent chatsync = new Intent(this,ServerConnect.class);
         chatsync.setAction("CHATS");
         chatsync.putExtra("email",this.getIntent().getStringExtra("email"));
-        chatsync.putExtra("Password",this.getIntent().getStringExtra("Password"));
+        chatsync.putExtra("Password",MainActivity.HashPassword(this.getIntent().getStringExtra("Password")));
+        chatsync.putExtra("op",this.getIntent().getStringExtra("op"));
         ServerConnect.enqueueWork(this,ServerConnect.class,1000,chatsync);
         //this.startService(chatsync);
     }

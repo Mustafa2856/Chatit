@@ -57,12 +57,14 @@ public class ServerConnect extends JobIntentService {
                     String response;
                     BufferedReader br = new BufferedReader(new InputStreamReader(in));
                     response = br.readLine();
+                    //if(response!=null)Log.println(Log.ERROR,"res",intent.getStringExtra("op")+" "+intent.getStringExtra("Password"));
                     if (response!=null && !response.equals("-1")){
-                        //Log.println(Log.ERROR,"res","response: " + response);
+
                         Intent openchatlist = new Intent();
                         openchatlist.setAction("com.exmaple.chatit.OPENCHAT");
                         openchatlist.putExtra("email",intent.getStringExtra("email"));
                         openchatlist.putExtra("Password",intent.getStringExtra("Password"));
+                        openchatlist.putExtra("op",intent.getStringExtra("op"));
                         LocalBroadcastManager.getInstance(this).sendBroadcast(openchatlist);
                         chats = new Chats();
                         FileOutputStream fout = openFileOutput("usr",MODE_PRIVATE);
@@ -100,11 +102,13 @@ public class ServerConnect extends JobIntentService {
                     String response;
                     BufferedReader br = new BufferedReader(new InputStreamReader(in));
                     response = br.readLine();
+                    //if(response!=null)Log.println(Log.ERROR,"res",intent.getStringExtra("op")+" "+intent.getStringExtra("Password"));
                     if (response!=null && !response.equals("-1")){
                         Intent openan = new Intent();
                         openan.setAction("com.exmaple.chatit.OPENASKNAME");
                         openan.putExtra("email",intent.getStringExtra("email"));
                         openan.putExtra("Password",intent.getStringExtra("Password"));
+                        openan.putExtra("op",intent.getStringExtra("op"));
                         LocalBroadcastManager.getInstance(this).sendBroadcast(openan);
                         //Log.println(Log.ERROR,"TAG", "1");
                     }else{
@@ -141,6 +145,7 @@ public class ServerConnect extends JobIntentService {
                         openan.setAction("com.exmaple.chatit.OPENCHATLIST");
                         openan.putExtra("email",intent.getStringExtra("email"));
                         openan.putExtra("Password",intent.getStringExtra("Password"));
+                        openan.putExtra("op",intent.getStringExtra("op"));
                         LocalBroadcastManager.getInstance(this).sendBroadcast(openan);
                         //Log.println(Log.ERROR,"TAG", "1");
                     }else{
@@ -184,7 +189,7 @@ public class ServerConnect extends JobIntentService {
                                 FileOutputStream fout = openFileOutput("usr",MODE_PRIVATE);
                                 fout.write(intent.getStringExtra("email").getBytes(StandardCharsets.UTF_8));
                                 fout.write("\n".getBytes(StandardCharsets.UTF_8));
-                                fout.write(intent.getStringExtra("Password").getBytes(StandardCharsets.UTF_8));
+                                fout.write(intent.getStringExtra("op").getBytes(StandardCharsets.UTF_8));
                                 fout.close();
                             }
                             //Log.println(Log.ERROR,"RESPONSE REC","response.toString()");
@@ -220,6 +225,7 @@ public class ServerConnect extends JobIntentService {
                             chats.setAction("CHATS");
                             chats.putExtra("email",intent.getStringExtra("email"));
                             chats.putExtra("Password",intent.getStringExtra("Password"));
+                            chats.putExtra("op",intent.getStringExtra("op"));
                             ServerConnect.enqueueWork(this,ServerConnect.class,1000,chats);
                         }catch(JSONException e) {
                             e.printStackTrace();
@@ -237,10 +243,10 @@ public class ServerConnect extends JobIntentService {
             Intent notifyUI = new Intent();
             notifyUI.setAction("com.example.chatit.CHATSYNC");
             LocalBroadcastManager.getInstance(this).sendBroadcast(notifyUI);
-            Intent chats = new Intent(this,ServerConnect.class);
-            chats.setAction("CHATS");
-            chats.putExtra("email",intent.getStringExtra("email"));
-            chats.putExtra("Password",intent.getStringExtra("Password"));
+            //Intent chats = new Intent(this,ServerConnect.class);
+            //chats.setAction("CHATS");
+            //chats.putExtra("email",intent.getStringExtra("email"));
+            //chats.putExtra("Password",intent.getStringExtra("Password"));
             //ServerConnect.enqueueWork(this,ServerConnect.class,1000,chats);
             //this.startService()
         }

@@ -13,10 +13,18 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import com.google.android.gms.common.util.IOUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.spec.EncodedKeySpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.*;
@@ -90,7 +98,7 @@ public class Chatlist extends AppCompatActivity {
         chatsync.setAction("CHATS");
         chatsync.putExtra("email",this.getIntent().getStringExtra("email"));
         chatsync.putExtra("Password",MainActivity.HashPassword(this.getIntent().getStringExtra("Password")));
-        chatsync.putExtra("op",this.getIntent().getStringExtra("op"));
+        chatsync.putExtra("op",this.getIntent().getStringExtra("Password"));
         ServerConnect.enqueueWork(this,ServerConnect.class,1000,chatsync);
         //this.startService(chatsync);
     }

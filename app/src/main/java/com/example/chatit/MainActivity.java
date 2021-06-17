@@ -16,8 +16,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -36,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
         return hash;
     }
 
-    private static String toHexString(byte[] hash)
+    public static String toHexString(byte[] hash)
     {
         // Convert byte array into signum representation
         BigInteger number = new BigInteger(1, hash);
@@ -51,6 +50,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return hexString.toString();
+    }
+
+    public static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
     }
 
     private void Check_Password_with_db(String email, String password){
@@ -81,6 +90,22 @@ public class MainActivity extends AppCompatActivity {
         regUser.setAction("REGISTER");
         regUser.putExtra("email",email);
         regUser.putExtra("Password",HashPassword(password));
+        try {
+            KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
+            gen.initialize(2048);
+            KeyPair pair = gen.generateKeyPair();
+            PrivateKey privatekey = pair.getPrivate();
+            PublicKey publicKey = pair.getPublic();
+            //Log.e("Public:",toHexString(publicKey.getEncoded()));
+            //Log.e("Private:",toHexString(privatekey.getEncoded()));
+            FileOutputStream fout = openFileOutput("pkey",MODE_PRIVATE);
+            fout.write(privatekey.getEncoded());
+            fout.close();
+            regUser.putExtra("pkey",toHexString(publicKey.getEncoded()));
+        } catch (NoSuchAlgorithmException | IOException e) {
+            e.printStackTrace();
+        }
+
         regUser.putExtra("op",password);
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override
@@ -98,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
             Intent openchatlist = new Intent(MainActivity.this,Chatlist.class);
             openchatlist.putExtra("email",email);
             openchatlist.putExtra("Password",Password);
-        Log.e("?","???????");
+            //Log.e("?","???????");
             startActivityForResult(openchatlist,0);
             finish();
     }
@@ -131,14 +156,14 @@ public class MainActivity extends AppCompatActivity {
         }
         Login = findViewById(R.id.Login);
         Login.setOnClickListener(v -> {
-            String Email = ((EditText)findViewById(R.id.Email)).getText().toString();
-            String Password = ((EditText)findViewById(R.id.Password)).getText().toString();
+            String Email = ((EditText)findViewById(R.id.Email)).getText().toString().trim();
+            String Password = ((EditText)findViewById(R.id.Password)).getText().toString().trim();
             Check_Password_with_db(Email,Password);
         });
         Register = findViewById(R.id.Register);
         Register.setOnClickListener(v -> {
-            String Email = ((EditText)findViewById(R.id.Email)).getText().toString();
-            String Password = ((EditText)findViewById(R.id.Password)).getText().toString();
+            String Email = ((EditText)findViewById(R.id.Email)).getText().toString().trim();
+            String Password = ((EditText)findViewById(R.id.Password)).getText().toString().trim();
             //Password = HashPassword(Password);
             createAccount(Email,Password);
         });

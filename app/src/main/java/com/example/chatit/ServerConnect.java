@@ -11,10 +11,19 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.*;
+import java.security.spec.EncodedKeySpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.ZoneId;
@@ -25,10 +34,26 @@ public class ServerConnect extends JobIntentService {
 
     static final int JOB_ID = 1000;
     public enum Operations {LOGIN,REGISTER,CHANGENAME,MESSAGE,CHATS,LOADCHATOFFLINE,FINDUSER}
+    private PrivateKey privateKey;
     public static Chats chats;
 
     @Override
     protected void onHandleWork(@NonNull Intent intent) {
+        if(privateKey==null){
+            try {
+                FileInputStream fin = openFileInput("pkey");
+                int nRead;ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                byte[] data = new byte[16384];
+                while ((nRead = fin.read(data, 0, data.length)) != -1) {
+                    buffer.write(data, 0, nRead);
+                }
+                EncodedKeySpec privatekeyspec = new PKCS8EncodedKeySpec(buffer.toByteArray());
+                privateKey = KeyFactory.getInstance("RSA").generatePrivate(privatekeyspec);
+
+            } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+                e.printStackTrace();
+            }
+        }
         if(chats==null)chats = new Chats();
         Operations op;
         try{
@@ -91,7 +116,8 @@ public class ServerConnect extends JobIntentService {
                 connection.setDoOutput(true);
                 connection.setDoInput(true);
                 connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                String data = "Username=janedoe&Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("Password");
+                String data = "Username=janedoe&Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("Password")
+                        + "&PublicKey=" + intent.getStringExtra("pkey");
                 byte[] out = data.getBytes(StandardCharsets.UTF_8);
                 OutputStream stream = connection.getOutputStream();
                 stream.write(out);
@@ -102,7 +128,7 @@ public class ServerConnect extends JobIntentService {
                     String response;
                     BufferedReader br = new BufferedReader(new InputStreamReader(in));
                     response = br.readLine();
-                    //if(response!=null)Log.println(Log.ERROR,"res",intent.getStringExtra("op")+" "+intent.getStringExtra("Password"));
+                    //if(response!=null)Log.println(Log.ERROR,"res",response);
                     if (response!=null && !response.equals("-1")){
                         Intent openan = new Intent();
                         openan.setAction("com.exmaple.chatit.OPENASKNAME");
@@ -200,6 +226,10 @@ public class ServerConnect extends JobIntentService {
                                 String email = obj.getJSONObject("sender").getString("email");
                                 String uname = obj.getJSONObject("sender").getString("uname");
                                 String message = obj.getJSONObject("message").getString("message");
+                                Cipher decryptCipher = Cipher.getInstance("RSA");
+                                decryptCipher.init(Cipher.DECRYPT_MODE, privateKey);
+                                byte[] decryptedmessagebytes = decryptCipher.doFinal(MainActivity.hexStringToByteArray(message));
+                                message = new String(decryptedmessagebytes);
                                 //Log.println(Log.ERROR,"tmp",obj.getString("timeStamp"));
                                 Timestamp tmp = new Timestamp(Timestamp.valueOf(obj.getString("timeStamp").substring(0,10) + " " + obj.getString("timeStamp").substring(11,19)).getTime() + TimeZone.getDefault().getRawOffset());
                                 //Timestamp tmp = Timestamp.valueOf(obj.getString("timeStamp"));
@@ -227,7 +257,7 @@ public class ServerConnect extends JobIntentService {
                             chats.putExtra("Password",intent.getStringExtra("Password"));
                             chats.putExtra("op",intent.getStringExtra("op"));
                             ServerConnect.enqueueWork(this,ServerConnect.class,1000,chats);
-                        }catch(JSONException e) {
+                        }catch(JSONException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
                             e.printStackTrace();
                         }
                     }
@@ -252,13 +282,13 @@ public class ServerConnect extends JobIntentService {
         }
         else if(op == Operations.MESSAGE){
             try {
-                URL url = new URL("https://chatit-server.herokuapp.com/message");
+                URL url = new URL("https://chatit-server.herokuapp.com/getpkey");
                 HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setDoOutput(true);
                 connection.setDoInput(true);
                 connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                String data = "Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("Password") + "&ReceiverEmail=" + intent.getStringExtra("remail") + "&message=" + intent.getStringExtra("msg");
+                String data = "email=" + intent.getStringExtra("remail");
                 byte[] out = data.getBytes(StandardCharsets.UTF_8);
                 OutputStream stream = connection.getOutputStream();
                 stream.write(out);
@@ -270,38 +300,65 @@ public class ServerConnect extends JobIntentService {
                     String response;
                     BufferedReader br = new BufferedReader(new InputStreamReader(in));
                     response = br.readLine();
-                    //Log.println(Log.ERROR,"res",response);
-                    if(response == null)return;
-                    if(!response.equals("2"))return;
-                    Timestamp tmp = new Timestamp(System.currentTimeMillis());
-                    chats.sendMessage(intent.getStringExtra("uname"),intent.getStringExtra("remail"),intent.getStringExtra("msg"),tmp);
-                    int mode = MODE_PRIVATE;
-                    if(checkUserStored(intent.getStringExtra("email")))mode |= MODE_APPEND;
-                    else{
-                        chats = new Chats();
-                        FileOutputStream fout = openFileOutput("usr",MODE_PRIVATE);
-                        fout.write(intent.getStringExtra("email").getBytes(StandardCharsets.UTF_8));
-                        fout.write("\n".getBytes(StandardCharsets.UTF_8));
-                        fout.write(intent.getStringExtra("Password").getBytes(StandardCharsets.UTF_8));
-                        fout.close();
-                    }
-                    FileOutputStream fout = openFileOutput("sm",mode);
-                    PrintWriter pw = new PrintWriter(fout);
-                    pw.println(intent.getStringExtra("remail"));
-                    pw.println(intent.getStringExtra("uname"));
+                    EncodedKeySpec keySpec = new X509EncodedKeySpec(MainActivity.hexStringToByteArray(response));
+                    PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(keySpec);
+                    url = new URL("https://chatit-server.herokuapp.com/message");
+                    connection = (HttpsURLConnection) url.openConnection();
+                    connection.setRequestMethod("POST");
+                    connection.setDoOutput(true);
+                    connection.setDoInput(true);
+                    connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
                     String msg = intent.getStringExtra("msg");
-                    msg = msg.replaceAll("[\r\n]","\u259f");
-                    pw.println(msg);
-                    pw.println(tmp);
-                    pw.close();
-                    fout.close();
-                    Intent notifyUI = new Intent();
-                    notifyUI.setAction("com.example.chatit.CHATSYNC");
-                    LocalBroadcastManager.getInstance(this).sendBroadcast(notifyUI);
-                } else {
-                    //Log.println(Log.ERROR,"TAG", "3");
+                    Cipher encryptCipher = Cipher.getInstance("RSA");
+                    encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey);
+                    byte[] secretMessageBytes = msg.getBytes(StandardCharsets.UTF_8);
+                    msg = MainActivity.toHexString(encryptCipher.doFinal(secretMessageBytes));
+                    data = "Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("Password") + "&ReceiverEmail=" + intent.getStringExtra("remail") + "&message=" + msg;
+                    out = data.getBytes(StandardCharsets.UTF_8);
+                    stream = connection.getOutputStream();
+                    stream.write(out);
+                    //Log.println(Log.ERROR,"res","response");
+                    //Log.println(Log.ERROR,"TAG", connection.getResponseCode()+"");
+                    if (connection.getResponseCode() == 200) {
+                        //Log.println(Log.ERROR,"TAG", "connection.getResponseMessage()");
+                        in = connection.getInputStream();response=null;
+                        br = new BufferedReader(new InputStreamReader(in));
+                        response = br.readLine();
+                        //Log.println(Log.ERROR,"res",response);
+                        if(response == null)return;
+                        if(!response.equals("2"))return;
+                        Timestamp tmp = new Timestamp(System.currentTimeMillis());
+                        chats.sendMessage(intent.getStringExtra("uname"),intent.getStringExtra("remail"),intent.getStringExtra("msg"),tmp);
+                        int mode = MODE_PRIVATE;
+                        if(checkUserStored(intent.getStringExtra("email")))mode |= MODE_APPEND;
+                        else{
+                            chats = new Chats();
+                            FileOutputStream fout = openFileOutput("usr",MODE_PRIVATE);
+                            fout.write(intent.getStringExtra("email").getBytes(StandardCharsets.UTF_8));
+                            fout.write("\n".getBytes(StandardCharsets.UTF_8));
+                            fout.write(intent.getStringExtra("Password").getBytes(StandardCharsets.UTF_8));
+                            fout.close();
+                        }
+                        FileOutputStream fout = openFileOutput("sm",mode);
+                        PrintWriter pw = new PrintWriter(fout);
+                        pw.println(intent.getStringExtra("remail"));
+                        pw.println(intent.getStringExtra("uname"));
+                        msg = intent.getStringExtra("msg");
+                        msg = msg.replaceAll("[\r\n]","\u259f");
+                        pw.println(msg);
+                        pw.println(tmp);
+                        pw.close();
+                        fout.close();
+                        Intent notifyUI = new Intent();
+                        notifyUI.setAction("com.example.chatit.CHATSYNC");
+                        LocalBroadcastManager.getInstance(this).sendBroadcast(notifyUI);
+                    } else {
+                        //Log.println(Log.ERROR,"TAG", "3");
+                    }
                 }
-            } catch (IOException e) {
+
+
+            } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
                 e.printStackTrace();
             }
         }

@@ -4,13 +4,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Build;
+import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import android.os.Bundle;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.io.*;
@@ -18,14 +16,16 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 
-
+/**
+ * Start page (User login and Register).
+ */
 public class MainActivity extends AppCompatActivity {
 
     Button Login;
     Button Register;
 
-    public static String HashPassword(String pass){
-        String hash=pass;
+    public static String HashPassword(String pass) {
+        String hash = pass;
         try {
             MessageDigest m = MessageDigest.getInstance("SHA-256");
             hash = toHexString(m.digest(pass.getBytes(StandardCharsets.UTF_8)));
@@ -35,20 +35,12 @@ public class MainActivity extends AppCompatActivity {
         return hash;
     }
 
-    public static String toHexString(byte[] hash)
-    {
-        // Convert byte array into signum representation
+    public static String toHexString(byte[] hash) {
         BigInteger number = new BigInteger(1, hash);
-
-        // Convert message digest into hex value
         StringBuilder hexString = new StringBuilder(number.toString(16));
-
-        // Pad with leading zeros
-        while (hexString.length() < 32)
-        {
+        while (hexString.length() < 32) {
             hexString.insert(0, '0');
         }
-
         return hexString.toString();
     }
 
@@ -57,83 +49,72 @@ public class MainActivity extends AppCompatActivity {
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
             data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i+1), 16));
+                    + Character.digit(s.charAt(i + 1), 16));
         }
         return data;
     }
 
-    private void Check_Password_with_db(String email, String password){
-        //Thread con = new ServerConnecter(ServerConnecter.Operations.LOGIN,email,password,this);
-        //con.start();
-        Intent checkPass = new Intent(this,ServerConnect.class);
+    private void Check_Password_with_db(String email, String password) {
+        Intent checkPass = new Intent(this, ServerConnect.class);
         checkPass.setAction("LOGIN");
-        checkPass.putExtra("email",email);
-        checkPass.putExtra("Password",HashPassword(password));
-        checkPass.putExtra("op",password);
+        checkPass.putExtra("email", email);
+        checkPass.putExtra("Password", HashPassword(password));
+        checkPass.putExtra("op", password);
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                //Log.println(Log.ERROR,"INCS","whyyyyy");
                 LocalBroadcastManager.getInstance(MainActivity.this).unregisterReceiver(this);
-                UpdateUI(intent.getStringExtra("email"),intent.getStringExtra("op"));
+                UpdateUI(intent.getStringExtra("email"), intent.getStringExtra("op"));
             }
-        },new IntentFilter("com.exmaple.chatit.OPENCHAT"));
-        ServerConnect.enqueueWork(this,ServerConnect.class,1000,checkPass);
-        //this.startService(checkPass);
+        }, new IntentFilter("com.exmaple.chatit.OPENCHAT"));
+        ServerConnect.enqueueWork(this, ServerConnect.class, 1000, checkPass);
 
     }
 
     private void createAccount(String email, String password) {
-        //Thread con = new ServerConnecter(ServerConnecter.Operations.REGISTER,email,password,this);
-        //con.start();
-        Intent regUser = new Intent(this,ServerConnect.class);
+        Intent regUser = new Intent(this, ServerConnect.class);
         regUser.setAction("REGISTER");
-        regUser.putExtra("email",email);
-        regUser.putExtra("Password",HashPassword(password));
+        regUser.putExtra("email", email);
+        regUser.putExtra("Password", HashPassword(password));
         try {
             KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
             gen.initialize(2048);
             KeyPair pair = gen.generateKeyPair();
             PrivateKey privatekey = pair.getPrivate();
             PublicKey publicKey = pair.getPublic();
-            //Log.e("Public:",toHexString(publicKey.getEncoded()));
-            //Log.e("Private:",toHexString(privatekey.getEncoded()));
-            FileOutputStream fout = openFileOutput("pkey",MODE_PRIVATE);
+            FileOutputStream fout = openFileOutput("pkey", MODE_PRIVATE);
             fout.write(privatekey.getEncoded());
             fout.close();
-            regUser.putExtra("pkey",toHexString(publicKey.getEncoded()));
+            regUser.putExtra("pkey", toHexString(publicKey.getEncoded()));
         } catch (NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
         }
 
-        regUser.putExtra("op",password);
+        regUser.putExtra("op", password);
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                //Log.println(Log.ERROR,"INCS","whyyyyy");
                 LocalBroadcastManager.getInstance(MainActivity.this).unregisterReceiver(this);
-                askName(intent.getStringExtra("email"),intent.getStringExtra("op"));
+                askName(intent.getStringExtra("email"), intent.getStringExtra("op"));
             }
-        },new IntentFilter("com.exmaple.chatit.OPENASKNAME"));
-        ServerConnect.enqueueWork(this,ServerConnect.class,1000,regUser);
-        //this.startService(regUser);
+        }, new IntentFilter("com.exmaple.chatit.OPENASKNAME"));
+        ServerConnect.enqueueWork(this, ServerConnect.class, 1000, regUser);
     }
 
-    public void UpdateUI(String email,String Password){
-            Intent openchatlist = new Intent(MainActivity.this,Chatlist.class);
-            openchatlist.putExtra("email",email);
-            openchatlist.putExtra("Password",Password);
-            //Log.e("?","???????");
-            startActivityForResult(openchatlist,0);
-            finish();
+    public void UpdateUI(String email, String Password) {
+        Intent openchatlist = new Intent(MainActivity.this, Chatlist.class);
+        openchatlist.putExtra("email", email);
+        openchatlist.putExtra("Password", Password);
+        startActivityForResult(openchatlist, 0);
+        finish();
     }
 
-    public void askName(String email,String Password){
-        Intent askname = new Intent(MainActivity.this,Ask_Name.class);
-        askname.putExtra("email",email);
-        askname.putExtra("Password",Password);
-        Log.e("?","???????");
-        startActivityForResult(askname,0);
+    public void askName(String email, String Password) {
+        Intent askname = new Intent(MainActivity.this, Ask_Name.class);
+        askname.putExtra("email", email);
+        askname.putExtra("Password", Password);
+        Log.e("?", "???????");
+        startActivityForResult(askname, 0);
         finish();
     }
 
@@ -141,31 +122,28 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        try{
+        try {
             FileInputStream fin = openFileInput("usr");
             BufferedReader br = new BufferedReader(new InputStreamReader(fin));
             String email = br.readLine();
             String Password = br.readLine();
-            if(email!=null && Password!=null){
-                //Password = HashPassword(Password);
-                //Check_Password_with_db(email,Password);
-                UpdateUI(email,Password);
+            if (email != null && Password != null) {
+                UpdateUI(email, Password);
             }
-        }catch(IOException e){
-
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         Login = findViewById(R.id.Login);
         Login.setOnClickListener(v -> {
-            String Email = ((EditText)findViewById(R.id.Email)).getText().toString().trim();
-            String Password = ((EditText)findViewById(R.id.Password)).getText().toString().trim();
-            Check_Password_with_db(Email,Password);
+            String Email = ((EditText) findViewById(R.id.Email)).getText().toString().trim();
+            String Password = ((EditText) findViewById(R.id.Password)).getText().toString().trim();
+            Check_Password_with_db(Email, Password);
         });
         Register = findViewById(R.id.Register);
         Register.setOnClickListener(v -> {
-            String Email = ((EditText)findViewById(R.id.Email)).getText().toString().trim();
-            String Password = ((EditText)findViewById(R.id.Password)).getText().toString().trim();
-            //Password = HashPassword(Password);
-            createAccount(Email,Password);
+            String Email = ((EditText) findViewById(R.id.Email)).getText().toString().trim();
+            String Password = ((EditText) findViewById(R.id.Password)).getText().toString().trim();
+            createAccount(Email, Password);
         });
     }
 }

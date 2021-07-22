@@ -1,9 +1,8 @@
 package com.example.chatit;
 
-import android.widget.Button;
+import android.os.Bundle;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
-import android.os.Bundle;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.text.MessageFormat;

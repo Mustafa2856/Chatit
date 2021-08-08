@@ -16,6 +16,7 @@ public class Chats {
     Map<String, Pair<Timestamp, String>> display_list = new HashMap<>();
     Map<String, ArrayList<Pair<Timestamp, String>>> messages = new HashMap<>();
     Map<String, ArrayList<Pair<Timestamp, String>>> sent = new HashMap<>();
+    Timestamp tmp = new Timestamp(0);
 
     public void addMessage(String uname, String email, String message, Timestamp tmp) {
         if (usernames == null) usernames = new HashMap<>();
@@ -33,7 +34,7 @@ public class Chats {
             if (display_list.get(email) != null && Objects.requireNonNull(display_list.get(email)).first.compareTo(tmp) <= 0)
                 display_list.put(email, new Pair<>(tmp, message));
         }
-
+        if(tmp.after(this.tmp))this.tmp = tmp;
     }
 
     public void sendMessage(String uname, String remail, String message, Timestamp tmp) {

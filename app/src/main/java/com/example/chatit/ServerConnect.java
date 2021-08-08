@@ -32,7 +32,7 @@ public class ServerConnect extends JobIntentService {
 
     static final int JOB_ID = 1000;
     public static Chats chats;
-    private PrivateKey privateKey;
+    private static PrivateKey privateKey;
 
     public static Chats getChats() {
         return chats;
@@ -45,7 +45,7 @@ public class ServerConnect extends JobIntentService {
                 FileInputStream fin = openFileInput("pkey");
                 int nRead;
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                byte[] data = new byte[16384];
+                byte[] data = new byte[128];
                 while ((nRead = fin.read(data, 0, data.length)) != -1) {
                     buffer.write(data, 0, nRead);
                 }
@@ -66,13 +66,14 @@ public class ServerConnect extends JobIntentService {
         }
         if (op == Operations.LOGIN) {
             try {
-                URL url = new URL("https://chatit-server.herokuapp.com/login");
+                URL url = new URL("https://chatit-server.herokuapp.com/setpkey");
                 HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setDoOutput(true);
                 connection.setDoInput(true);
                 connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                String data = "Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("Password");
+                String data = "Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("password")
+                        + "&PublicKey=" + intent.getStringExtra("pkey");
                 byte[] out = data.getBytes(StandardCharsets.UTF_8);
                 OutputStream stream = connection.getOutputStream();
                 stream.write(out);
@@ -85,21 +86,21 @@ public class ServerConnect extends JobIntentService {
                         Intent openchatlist = new Intent();
                         openchatlist.setAction("com.exmaple.chatit.OPENCHAT");
                         openchatlist.putExtra("email", intent.getStringExtra("email"));
-                        openchatlist.putExtra("Password", intent.getStringExtra("Password"));
-                        openchatlist.putExtra("op", intent.getStringExtra("op"));
+                        openchatlist.putExtra("password", intent.getStringExtra("password"));
                         LocalBroadcastManager.getInstance(this).sendBroadcast(openchatlist);
                         chats = new Chats();
                         FileOutputStream fout = openFileOutput("usr", MODE_PRIVATE);
                         fout.write(intent.getStringExtra("email").getBytes(StandardCharsets.UTF_8));
                         fout.write("\n".getBytes(StandardCharsets.UTF_8));
-                        fout.write(intent.getStringExtra("Password").getBytes(StandardCharsets.UTF_8));
+                        fout.write(intent.getStringExtra("password").getBytes(StandardCharsets.UTF_8));
                         fout.close();
                     }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        } else if (op == Operations.REGISTER) {
+        }
+        else if (op == Operations.REGISTER) {
             try {
                 URL url = new URL("https://chatit-server.herokuapp.com/register");
                 HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
@@ -107,7 +108,7 @@ public class ServerConnect extends JobIntentService {
                 connection.setDoOutput(true);
                 connection.setDoInput(true);
                 connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                String data = "Username=janedoe&Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("Password")
+                String data = "Username=janedoe&Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("password")
                         + "&PublicKey=" + intent.getStringExtra("pkey");
                 byte[] out = data.getBytes(StandardCharsets.UTF_8);
                 OutputStream stream = connection.getOutputStream();
@@ -121,16 +122,22 @@ public class ServerConnect extends JobIntentService {
                         Intent openan = new Intent();
                         openan.setAction("com.exmaple.chatit.OPENASKNAME");
                         openan.putExtra("email", intent.getStringExtra("email"));
-                        openan.putExtra("Password", intent.getStringExtra("Password"));
-                        openan.putExtra("op", intent.getStringExtra("op"));
+                        openan.putExtra("password", intent.getStringExtra("password"));
                         LocalBroadcastManager.getInstance(this).sendBroadcast(openan);
+                        chats = new Chats();
+                        FileOutputStream fout = openFileOutput("usr", MODE_PRIVATE);
+                        fout.write(intent.getStringExtra("email").getBytes(StandardCharsets.UTF_8));
+                        fout.write("\n".getBytes(StandardCharsets.UTF_8));
+                        fout.write(intent.getStringExtra("password").getBytes(StandardCharsets.UTF_8));
+                        fout.close();
                     }
                 }
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        } else if (op == Operations.CHANGENAME) {
+        }
+        else if (op == Operations.CHANGENAME) {
             try {
                 URL url = new URL("https://chatit-server.herokuapp.com/changename");
                 HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
@@ -138,7 +145,7 @@ public class ServerConnect extends JobIntentService {
                 connection.setDoOutput(true);
                 connection.setDoInput(true);
                 connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                String data = "Username=" + intent.getStringExtra("uname") + "&Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("Password");
+                String data = "Username=" + intent.getStringExtra("uname") + "&Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("password");
                 byte[] out = data.getBytes(StandardCharsets.UTF_8);
                 OutputStream stream = connection.getOutputStream();
                 stream.write(out);
@@ -151,15 +158,15 @@ public class ServerConnect extends JobIntentService {
                         Intent openan = new Intent();
                         openan.setAction("com.exmaple.chatit.OPENCHATLIST");
                         openan.putExtra("email", intent.getStringExtra("email"));
-                        openan.putExtra("Password", intent.getStringExtra("Password"));
-                        openan.putExtra("op", intent.getStringExtra("op"));
+                        openan.putExtra("password", intent.getStringExtra("password"));
                         LocalBroadcastManager.getInstance(this).sendBroadcast(openan);
                     }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        } else if (op == Operations.CHATS) {
+        }
+        else if (op == Operations.CHATS) {
             try {
                 URL url = new URL("https://chatit-server.herokuapp.com/chats");
                 HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
@@ -167,7 +174,8 @@ public class ServerConnect extends JobIntentService {
                 connection.setDoOutput(true);
                 connection.setDoInput(true);
                 connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                String data = "Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("Password");
+                String timestamp = chats.tmp.toString();
+                String data = "Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("password") + "&Timestamp=" + timestamp;
                 byte[] out = data.getBytes(StandardCharsets.UTF_8);
                 OutputStream stream = connection.getOutputStream();
                 stream.write(out);
@@ -187,7 +195,7 @@ public class ServerConnect extends JobIntentService {
                                 FileOutputStream fout = openFileOutput("usr", MODE_PRIVATE);
                                 fout.write(intent.getStringExtra("email").getBytes(StandardCharsets.UTF_8));
                                 fout.write("\n".getBytes(StandardCharsets.UTF_8));
-                                fout.write(intent.getStringExtra("op").getBytes(StandardCharsets.UTF_8));
+                                fout.write(intent.getStringExtra("password").getBytes(StandardCharsets.UTF_8));
                                 fout.close();
                             }
                             FileOutputStream fout = openFileOutput("msgs", mode);
@@ -220,8 +228,7 @@ public class ServerConnect extends JobIntentService {
                             Intent chats = new Intent(this, ServerConnect.class);
                             chats.setAction("CHATS");
                             chats.putExtra("email", intent.getStringExtra("email"));
-                            chats.putExtra("Password", intent.getStringExtra("Password"));
-                            chats.putExtra("op", intent.getStringExtra("op"));
+                            chats.putExtra("password", intent.getStringExtra("password"));
                             ServerConnect.enqueueWork(this, ServerConnect.class, 1000, chats);
                         } catch (JSONException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
                             e.printStackTrace();
@@ -266,7 +273,7 @@ public class ServerConnect extends JobIntentService {
                     encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey);
                     byte[] secretMessageBytes = msg.getBytes(StandardCharsets.UTF_8);
                     msg = MainActivity.toHexString(encryptCipher.doFinal(secretMessageBytes));
-                    data = "Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("Password") + "&ReceiverEmail=" + intent.getStringExtra("remail") + "&message=" + msg;
+                    data = "Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("password") + "&ReceiverEmail=" + intent.getStringExtra("remail") + "&message=" + msg;
                     out = data.getBytes(StandardCharsets.UTF_8);
                     stream = connection.getOutputStream();
                     stream.write(out);
@@ -285,7 +292,7 @@ public class ServerConnect extends JobIntentService {
                             FileOutputStream fout = openFileOutput("usr", MODE_PRIVATE);
                             fout.write(intent.getStringExtra("email").getBytes(StandardCharsets.UTF_8));
                             fout.write("\n".getBytes(StandardCharsets.UTF_8));
-                            fout.write(intent.getStringExtra("Password").getBytes(StandardCharsets.UTF_8));
+                            fout.write(intent.getStringExtra("password").getBytes(StandardCharsets.UTF_8));
                             fout.close();
                         }
                         FileOutputStream fout = openFileOutput("sm", mode);
@@ -316,7 +323,7 @@ public class ServerConnect extends JobIntentService {
                 connection.setDoOutput(true);
                 connection.setDoInput(true);
                 connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                String data = "uname=" + intent.getStringExtra("uname");
+                String data = "email=" + intent.getStringExtra("uname");
                 byte[] out = data.getBytes(StandardCharsets.UTF_8);
                 OutputStream stream = connection.getOutputStream();
                 stream.write(out);
@@ -353,7 +360,6 @@ public class ServerConnect extends JobIntentService {
             br.close();
             fin.close();
         } catch (IOException e) {
-            e.printStackTrace();
         }
         try {
             FileInputStream fin = openFileInput("sm");
@@ -369,7 +375,6 @@ public class ServerConnect extends JobIntentService {
             br.close();
             fin.close();
         } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 

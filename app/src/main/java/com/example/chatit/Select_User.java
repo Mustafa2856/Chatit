@@ -41,7 +41,7 @@ public class Select_User extends AppCompatActivity {
                     txt.setOnClickListener(v -> {
                         Intent in = new Intent(Select_User.this, Chat.class);
                         in.putExtra("email", Select_User.this.getIntent().getStringExtra("email"));
-                        in.putExtra("Password", Select_User.this.getIntent().getStringExtra("Password"));
+                        in.putExtra("password", Select_User.this.getIntent().getStringExtra("password"));
                         in.putExtra("remail", email);
                         in.putExtra("uname", uname);
                         startActivityForResult(in, 0);
@@ -65,7 +65,7 @@ public class Select_User extends AppCompatActivity {
             intent.setAction("FINDUSER");
             intent.putExtra("uname", searchbar.getText().toString());
             intent.putExtra("email", this.getIntent().getStringExtra("email"));
-            intent.putExtra("Password", this.getIntent().getStringExtra("Password"));
+            intent.putExtra("password", this.getIntent().getStringExtra("password"));
             ServerConnect.enqueueWork(this, ServerConnect.class, 1000, intent);
         });
         LocalBroadcastManager.getInstance(this).registerReceiver(receiver, new IntentFilter("com.example.chatit.USRLIST"));

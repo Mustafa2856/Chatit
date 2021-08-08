@@ -53,8 +53,7 @@ public class Chat extends AppCompatActivity {
                 Intent i = new Intent(this, ServerConnect.class);
                 i.setAction("MESSAGE");
                 i.putExtra("email", this.getIntent().getStringExtra("email"));
-                i.putExtra("Password", MainActivity.HashPassword(this.getIntent().getStringExtra("Password")));
-                i.putExtra("op", this.getIntent().getStringExtra("Password"));
+                i.putExtra("password", this.getIntent().getStringExtra("password"));
                 i.putExtra("remail", this.getIntent().getStringExtra("remail"));
                 i.putExtra("uname", this.getIntent().getStringExtra("uname"));
                 i.putExtra("msg", message);
@@ -65,8 +64,7 @@ public class Chat extends AppCompatActivity {
         Intent chatsync = new Intent(this, ServerConnect.class);
         chatsync.setAction("CHATS");
         chatsync.putExtra("email", this.getIntent().getStringExtra("email"));
-        chatsync.putExtra("Password", MainActivity.HashPassword(this.getIntent().getStringExtra("Password")));
-        chatsync.putExtra("op", this.getIntent().getStringExtra("Password"));
+        chatsync.putExtra("password", this.getIntent().getStringExtra("password"));
         ServerConnect.enqueueWork(this, ServerConnect.class, 1000, chatsync);
         LocalBroadcastManager.getInstance(this).registerReceiver(reciever, new IntentFilter("com.example.chatit.CHATSYNC"));
     }

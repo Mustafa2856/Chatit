@@ -10,6 +10,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import com.google.android.material.snackbar.BaseTransientBottomBar;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -23,6 +25,19 @@ public class MainActivity extends AppCompatActivity {
 
     Button Login;
     Button Register;
+
+    private final BroadcastReceiver serverResponse = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getStringExtra("res").equals("OK")){
+
+            }
+            else{
+                Snackbar mySnackbar = Snackbar.make(findViewById(R.id.mainveiw), intent.getStringExtra("res"), BaseTransientBottomBar.LENGTH_SHORT);
+                mySnackbar.show();
+            }
+        }
+    };
 
     public static String HashPassword(String pass) {
         String hash = pass;
@@ -54,17 +69,32 @@ public class MainActivity extends AppCompatActivity {
         return data;
     }
 
-    private void Check_Password_with_db(String email, String password) {
+    private void usrLogin(String email, String password) {
         Intent checkPass = new Intent(this, ServerConnect.class);
         checkPass.setAction("LOGIN");
         checkPass.putExtra("email", email);
-        checkPass.putExtra("Password", HashPassword(password));
-        checkPass.putExtra("op", password);
+        checkPass.putExtra("password", HashPassword(password));
+        Snackbar mySnackbar = Snackbar.make(findViewById(R.id.mainveiw), "logging in", BaseTransientBottomBar.LENGTH_SHORT);
+        mySnackbar.show();
+        try {
+            KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
+            gen.initialize(2048);
+            KeyPair pair = gen.generateKeyPair();
+            PrivateKey privatekey = pair.getPrivate();
+            PublicKey publicKey = pair.getPublic();
+            FileOutputStream fout = openFileOutput("pkey", MODE_PRIVATE);
+            fout.write(privatekey.getEncoded());
+            fout.close();
+            checkPass.putExtra("pkey", toHexString(publicKey.getEncoded()));
+        } catch (NoSuchAlgorithmException | IOException e) {
+            e.printStackTrace();
+        }
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+
                 LocalBroadcastManager.getInstance(MainActivity.this).unregisterReceiver(this);
-                UpdateUI(intent.getStringExtra("email"), intent.getStringExtra("op"));
+                UpdateUI(intent.getStringExtra("email"), intent.getStringExtra("password"));
             }
         }, new IntentFilter("com.exmaple.chatit.OPENCHAT"));
         ServerConnect.enqueueWork(this, ServerConnect.class, 1000, checkPass);
@@ -75,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
         Intent regUser = new Intent(this, ServerConnect.class);
         regUser.setAction("REGISTER");
         regUser.putExtra("email", email);
-        regUser.putExtra("Password", HashPassword(password));
+        regUser.putExtra("password", HashPassword(password));
         try {
             KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
             gen.initialize(2048);
@@ -89,31 +119,28 @@ public class MainActivity extends AppCompatActivity {
         } catch (NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
         }
-
-        regUser.putExtra("op", password);
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 LocalBroadcastManager.getInstance(MainActivity.this).unregisterReceiver(this);
-                askName(intent.getStringExtra("email"), intent.getStringExtra("op"));
+                askName(intent.getStringExtra("email"), intent.getStringExtra("password"));
             }
         }, new IntentFilter("com.exmaple.chatit.OPENASKNAME"));
         ServerConnect.enqueueWork(this, ServerConnect.class, 1000, regUser);
     }
 
-    public void UpdateUI(String email, String Password) {
+    public void UpdateUI(String email, String password) {
         Intent openchatlist = new Intent(MainActivity.this, Chatlist.class);
         openchatlist.putExtra("email", email);
-        openchatlist.putExtra("Password", Password);
+        openchatlist.putExtra("password", password);
         startActivityForResult(openchatlist, 0);
         finish();
     }
 
-    public void askName(String email, String Password) {
+    public void askName(String email, String password) {
         Intent askname = new Intent(MainActivity.this, Ask_Name.class);
         askname.putExtra("email", email);
-        askname.putExtra("Password", Password);
-        Log.e("?", "???????");
+        askname.putExtra("password", password);
         startActivityForResult(askname, 0);
         finish();
     }
@@ -137,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
         Login.setOnClickListener(v -> {
             String Email = ((EditText) findViewById(R.id.Email)).getText().toString().trim();
             String Password = ((EditText) findViewById(R.id.Password)).getText().toString().trim();
-            Check_Password_with_db(Email, Password);
+            usrLogin(Email, Password);
         });
         Register = findViewById(R.id.Register);
         Register.setOnClickListener(v -> {

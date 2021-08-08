@@ -20,8 +20,7 @@ public class Ask_Name extends AppCompatActivity {
         Intent chn = new Intent(this, ServerConnect.class);
         chn.setAction("CHANGENAME");
         chn.putExtra("email", this.getIntent().getStringExtra("email"));
-        chn.putExtra("Password", MainActivity.HashPassword(this.getIntent().getStringExtra("Password")));
-        chn.putExtra("op", this.getIntent().getStringExtra("Password"));
+        chn.putExtra("password",this.getIntent().getStringExtra("password"));
         chn.putExtra("uname", name);
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override

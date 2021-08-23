@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 import android.view.Gravity;
 import android.widget.*;
@@ -24,7 +25,7 @@ import java.util.Collections;
  */
 public class Chat extends AppCompatActivity {
 
-    private ArrayList<Pair<Pair<Timestamp, String>, Boolean>> chats;
+    private ArrayList<Pair<Pair<Timestamp, Message>, Boolean>> chats;
     private final BroadcastReceiver reciever = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -83,35 +84,52 @@ public class Chat extends AppCompatActivity {
         params.setMargins(10, 10, 10, 10);
         findViewById(R.id.chat).setBackgroundColor(Color.WHITE);
         chat_display.removeAllViews();
-        for (Pair<Pair<Timestamp, String>, Boolean> chat : chats) {
-            TextView txt = new TextView(this);
-            txt.setText(String.format("%s\n%s", chat.first.second, chat.first.first.toString().substring(11, 16)));
-            txt.setTextColor(Color.BLACK);
-            txt.setPadding(10, 10, 10, 10);
-            GradientDrawable shape = new GradientDrawable();
-            shape.setCornerRadius(16);
-            shape.setColor(Color.argb(255, 211, 247, 198));
-            txt.setBackground(shape);
-            txt.setLayoutParams(params);
-            txt.setEllipsize(TextUtils.TruncateAt.END);
-            chat_display.addView(txt);
-            if (chat.second) ((LinearLayout.LayoutParams) txt.getLayoutParams()).gravity = Gravity.RIGHT;
-            txt.requestLayout();
+        for (Pair<Pair<Timestamp, Message>, Boolean> chat : chats) {
+            if(chat.first.second.tp == Message.type.TEXT){
+                TextView txt = new TextView(this);
+                txt.setText(String.format("%s\n%s", chat.first.second, chat.first.first.toString().substring(11, 16)));
+                txt.setTextColor(Color.BLACK);
+                txt.setPadding(10, 10, 10, 10);
+                GradientDrawable shape = new GradientDrawable();
+                shape.setCornerRadius(16);
+                shape.setColor(Color.argb(255, 211, 247, 198));
+                txt.setBackground(shape);
+                txt.setLayoutParams(params);
+                txt.setEllipsize(TextUtils.TruncateAt.END);
+                chat_display.addView(txt);
+                if (chat.second) ((LinearLayout.LayoutParams) txt.getLayoutParams()).gravity = Gravity.RIGHT;
+                txt.requestLayout();
+            }
+            else if(chat.first.second.tp == Message.type.DOC){
+                //TODO
+            }
+            else if(chat.first.second.tp == Message.type.AUDIO){
+                //TODO
+            }
+            else if(chat.first.second.tp == Message.type.VIDEO){
+                //TODO
+            }
+            else if(chat.first.second.tp == Message.type.IMG){
+                //TODO
+            }
+            else{
+                Log.e("msgType","Invalid msg type: " + chat.first.second.tp.toString());
+            }
         }
         findViewById(R.id.chat).post(() -> findViewById(R.id.chat).scrollTo(0, findViewById(R.id.chatv).getBottom()));
     }
 
     private void fillChats() {
         chats = new ArrayList<>();
-        ArrayList<Pair<Timestamp, String>> userChats = ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail"));
+        ArrayList<Pair<Timestamp, Message>> userChats = ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail"));
         if (userChats != null) {
-            for (Pair<Timestamp, String> m : userChats) {
+            for (Pair<Timestamp, Message> m : userChats) {
                 chats.add(new Pair<>(new Pair<>(m.first, m.second), false));
             }
         }
         userChats = ServerConnect.getChats().sent.get(this.getIntent().getStringExtra("remail"));
         if (userChats != null) {
-            for (Pair<Timestamp, String> m : userChats) {
+            for (Pair<Timestamp, Message> m : userChats) {
                 chats.add(new Pair<>(new Pair<>(m.first, m.second), true));
             }
         }

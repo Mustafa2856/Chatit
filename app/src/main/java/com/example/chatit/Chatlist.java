@@ -38,12 +38,15 @@ public class Chatlist extends AppCompatActivity {
     };
 
     private void updateUI() {
-        List<Map.Entry<String, Pair<Timestamp, String>>> list = new ArrayList<>(chats.display_list.entrySet());
+        List<Map.Entry<String, Pair<Timestamp, Message>>> list = new ArrayList<>(chats.display_list.entrySet());
         Collections.sort(list, (o1, o2) -> -o1.getValue().first.compareTo(o2.getValue().first));
         chats_display.removeAllViews();
-        for (Map.Entry<String, Pair<Timestamp, String>> value : list) {
+        for (Map.Entry<String, Pair<Timestamp, Message>> value : list) {
             TextView txt = new TextView(this);
-            String msg = value.getValue().second;
+            String msg = value.getValue().second.tp.toString();
+            if(value.getValue().second.tp == Message.type.TEXT){
+                msg = new String(value.getValue().second.data);
+            }
             msg = msg.replaceAll("\n", " ");
             if (msg.length() > 10) msg = msg.substring(0, 10) + "...";
             txt.setText(MessageFormat.format("{0}\n{1}: {2}", chats.usernames.get(value.getKey()), value.getValue().first, msg));

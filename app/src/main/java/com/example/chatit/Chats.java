@@ -12,13 +12,14 @@ import java.util.Objects;
  * Class to centrally store all chats of the user.
  */
 public class Chats {
+
     Map<String, String> usernames = new HashMap<>();
-    Map<String, Pair<Timestamp, String>> display_list = new HashMap<>();
-    Map<String, ArrayList<Pair<Timestamp, String>>> messages = new HashMap<>();
-    Map<String, ArrayList<Pair<Timestamp, String>>> sent = new HashMap<>();
+    Map<String, Pair<Timestamp, Message>> display_list = new HashMap<>();
+    Map<String, ArrayList<Pair<Timestamp, Message>>> messages = new HashMap<>();
+    Map<String, ArrayList<Pair<Timestamp, Message>>> sent = new HashMap<>();
     Timestamp tmp = new Timestamp(0);
 
-    public void addMessage(String uname, String email, String message, Timestamp tmp) {
+    public void addMessage(String uname, String email, Message message, Timestamp tmp) {
         if (usernames == null) usernames = new HashMap<>();
         if (messages == null) display_list = new HashMap<>();
         if (display_list == null) messages = new HashMap<>();
@@ -37,7 +38,7 @@ public class Chats {
         if(tmp.after(this.tmp))this.tmp = tmp;
     }
 
-    public void sendMessage(String uname, String remail, String message, Timestamp tmp) {
+    public void sendMessage(String uname, String remail, Message message, Timestamp tmp) {
         if (!sent.containsKey(remail)) {
             sent.put(remail, new ArrayList<>());
         }

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
@@ -29,12 +30,20 @@ public class MainActivity extends AppCompatActivity {
     private final BroadcastReceiver serverResponse = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getStringExtra("res").equals("OK")){
-
+            int res = intent.getIntExtra("valid",0);
+            if (res == 1) {
+                openChatList(intent.getStringExtra("email"), intent.getStringExtra("password"));
             }
-            else{
-                Snackbar mySnackbar = Snackbar.make(findViewById(R.id.mainveiw), intent.getStringExtra("res"), BaseTransientBottomBar.LENGTH_SHORT);
-                mySnackbar.show();
+            else if (res == 2) {
+                askName(intent.getStringExtra("email"), intent.getStringExtra("password"));
+            }
+            else if (res == 3) {
+                Snackbar snackbar = Snackbar.make(findViewById(R.id.mainveiw), "Email already exists", Snackbar.LENGTH_SHORT);
+                snackbar.show();
+            }
+            else {
+                Snackbar snackbar = Snackbar.make(findViewById(R.id.mainveiw), "Email or Password incorrect", Snackbar.LENGTH_SHORT);
+                snackbar.show();
             }
         }
     };
@@ -43,30 +52,11 @@ public class MainActivity extends AppCompatActivity {
         String hash = pass;
         try {
             MessageDigest m = MessageDigest.getInstance("SHA-256");
-            hash = toHexString(m.digest(pass.getBytes(StandardCharsets.UTF_8)));
+            hash = Base64.encodeToString(m.digest(pass.getBytes(StandardCharsets.UTF_8)),Base64.NO_WRAP);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
         return hash;
-    }
-
-    public static String toHexString(byte[] hash) {
-        BigInteger number = new BigInteger(1, hash);
-        StringBuilder hexString = new StringBuilder(number.toString(16));
-        while (hexString.length() < 32) {
-            hexString.insert(0, '0');
-        }
-        return hexString.toString();
-    }
-
-    public static byte[] hexStringToByteArray(String s) {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i + 1), 16));
-        }
-        return data;
     }
 
     private void usrLogin(String email, String password) {
@@ -74,8 +64,6 @@ public class MainActivity extends AppCompatActivity {
         checkPass.setAction("LOGIN");
         checkPass.putExtra("email", email);
         checkPass.putExtra("password", HashPassword(password));
-        Snackbar mySnackbar = Snackbar.make(findViewById(R.id.mainveiw), "logging in", BaseTransientBottomBar.LENGTH_SHORT);
-        mySnackbar.show();
         try {
             KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
             gen.initialize(2048);
@@ -85,20 +73,13 @@ public class MainActivity extends AppCompatActivity {
             FileOutputStream fout = openFileOutput("pkey", MODE_PRIVATE);
             fout.write(privatekey.getEncoded());
             fout.close();
-            checkPass.putExtra("pkey", toHexString(publicKey.getEncoded()));
+            checkPass.putExtra("pkey", Base64.encodeToString(publicKey.getEncoded(),Base64.NO_WRAP));
         } catch (NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
         }
-        LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-
-                LocalBroadcastManager.getInstance(MainActivity.this).unregisterReceiver(this);
-                UpdateUI(intent.getStringExtra("email"), intent.getStringExtra("password"));
-            }
-        }, new IntentFilter("com.exmaple.chatit.OPENCHAT"));
         ServerConnect.enqueueWork(this, ServerConnect.class, 1000, checkPass);
-
+        Snackbar snackbar = Snackbar.make(findViewById(R.id.mainveiw), "Logging in", Snackbar.LENGTH_SHORT);
+        snackbar.show();
     }
 
     private void createAccount(String email, String password) {
@@ -115,21 +96,16 @@ public class MainActivity extends AppCompatActivity {
             FileOutputStream fout = openFileOutput("pkey", MODE_PRIVATE);
             fout.write(privatekey.getEncoded());
             fout.close();
-            regUser.putExtra("pkey", toHexString(publicKey.getEncoded()));
+            regUser.putExtra("pkey", Base64.encodeToString(publicKey.getEncoded(),Base64.NO_WRAP));
         } catch (NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
         }
-        LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                LocalBroadcastManager.getInstance(MainActivity.this).unregisterReceiver(this);
-                askName(intent.getStringExtra("email"), intent.getStringExtra("password"));
-            }
-        }, new IntentFilter("com.exmaple.chatit.OPENASKNAME"));
         ServerConnect.enqueueWork(this, ServerConnect.class, 1000, regUser);
+        Snackbar snackbar = Snackbar.make(findViewById(R.id.mainveiw), "Creating User", Snackbar.LENGTH_SHORT);
+        snackbar.show();
     }
 
-    public void UpdateUI(String email, String password) {
+    public void openChatList(String email, String password) {
         Intent openchatlist = new Intent(MainActivity.this, Chatlist.class);
         openchatlist.putExtra("email", email);
         openchatlist.putExtra("password", password);
@@ -149,13 +125,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        LocalBroadcastManager.getInstance(this).registerReceiver(serverResponse,new IntentFilter("com.exmaple.chatit.MAINACTIVITYRESPONSE"));
         try {
             FileInputStream fin = openFileInput("usr");
             BufferedReader br = new BufferedReader(new InputStreamReader(fin));
             String email = br.readLine();
             String Password = br.readLine();
             if (email != null && Password != null) {
-                UpdateUI(email, Password);
+                openChatList(email, Password);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -172,5 +149,11 @@ public class MainActivity extends AppCompatActivity {
             String Password = ((EditText) findViewById(R.id.Password)).getText().toString().trim();
             createAccount(Email, Password);
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(serverResponse);
+        super.onDestroy();
     }
 }

@@ -92,7 +92,7 @@ public class Chatlist extends AppCompatActivity {
         Intent chatsync = new Intent(this, ServerConnect.class);
         chatsync.setAction("CHATS");
         chatsync.putExtra("email", this.getIntent().getStringExtra("email"));
-        chatsync.putExtra("password", MainActivity.HashPassword(this.getIntent().getStringExtra("password")));
+        chatsync.putExtra("password", this.getIntent().getStringExtra("password"));
         ServerConnect.enqueueWork(this, ServerConnect.class, 1000, chatsync);
     }
 

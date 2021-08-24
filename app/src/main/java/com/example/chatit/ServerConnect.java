@@ -6,11 +6,13 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.app.JobIntentService;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import com.google.android.gms.common.util.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.URL;
@@ -201,9 +203,87 @@ public class ServerConnect extends JobIntentService {
                 OutputStream stream = connection.getOutputStream();
                 stream.write(out);
                 if (connection.getResponseCode() == 200) {
-                    InputStream in = connection.getInputStream();
+                    InputStream is = connection.getInputStream();
+                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                    int nRead;
+                    byte[] dat = new byte[16384];
+                    while ((nRead = is.read(dat, 0, dat.length)) != -1) {
+                        bout.write(dat, 0, nRead);
+                    }
+                    if(bout.size()>0){
+                        dat = bout.toByteArray();
+                        String email = null,uname = null,type = null;
+                        byte[] keyBytes = new byte[0];
+                        int index=0,i=0;
+                        bout = new ByteArrayOutputStream();
+                        for(i=0;i<dat.length;i++){
+                            if(dat[i] == '-') {
+                                if(index == 0){
+                                    email = new String(Base64.decode(bout.toByteArray(),Base64.NO_WRAP));
+                                    bout = new ByteArrayOutputStream();
+                                }
+                                else if(index == 1){
+                                    uname = new String(Base64.decode(bout.toByteArray(),Base64.NO_WRAP));
+                                    bout = new ByteArrayOutputStream();
+                                }
+                                else if(index == 2){
+                                    timestamp = new String(Base64.decode(bout.toByteArray(),Base64.NO_WRAP));
+                                    bout = new ByteArrayOutputStream();
+                                }
+                                else if(index == 3){
+                                    type = new String(Base64.decode(bout.toByteArray(),Base64.NO_WRAP));
+                                    bout = new ByteArrayOutputStream();
+
+                                }
+                                else{
+                                    keyBytes = Base64.decode(bout.toByteArray(),Base64.NO_WRAP);
+                                    break;
+                                }
+                                index ++;
+                            }
+                            else bout.write(dat[i]);
+                        }
+                        bout = new ByteArrayOutputStream();
+                        bout.write(dat,i+1, dat.length - i-1);
+                        byte[] msgBytes = bout.toByteArray();
+                        Cipher decryptCipherRSA = Cipher.getInstance("RSA");
+                        decryptCipherRSA.init(Cipher.DECRYPT_MODE,privateKey);
+                        Cipher decryptCipherAES = Cipher.getInstance("AES");
+                        keyBytes = decryptCipherRSA.doFinal(keyBytes);
+                        SecretKeySpec keySpec = new SecretKeySpec(keyBytes,"AES");
+                        decryptCipherAES.init(Cipher.DECRYPT_MODE,keySpec);
+                        msgBytes = decryptCipherAES.doFinal(msgBytes);
+                        String msg = Base64.encodeToString(msgBytes,Base64.NO_WRAP);
+                        Timestamp tmp = Timestamp.valueOf(timestamp);
+                        chats.addMessage(uname,email,new Message(Message.type.valueOf(type),msgBytes),tmp);
+                        int mode = MODE_PRIVATE;
+                        if (checkUserStored(intent.getStringExtra("email"))) mode |= MODE_APPEND;
+                        else {
+                            chats = new Chats();
+                            FileOutputStream fout = openFileOutput("usr", MODE_PRIVATE);
+                            fout.write(intent.getStringExtra("email").getBytes(StandardCharsets.UTF_8));
+                            fout.write("\n".getBytes(StandardCharsets.UTF_8));
+                            fout.write(intent.getStringExtra("password").getBytes(StandardCharsets.UTF_8));
+                            fout.close();
+                        }
+                        FileOutputStream fout = openFileOutput("msgs", mode);
+                        PrintWriter pw = new PrintWriter(fout);
+                        pw.println(email);
+                        pw.println(uname);
+                        pw.println(type);
+                        pw.println(msg);
+                        pw.println(tmp);
+                        Intent notifyUI = new Intent();
+                        notifyUI.setAction("com.example.chatit.CHATSYNC");
+                        LocalBroadcastManager.getInstance(this).sendBroadcast(notifyUI);
+                    }
+                    Intent chats = new Intent(this, ServerConnect.class);
+                    chats.setAction("CHATS");
+                    chats.putExtra("email", intent.getStringExtra("email"));
+                    chats.putExtra("password", intent.getStringExtra("password"));
+                    ServerConnect.enqueueWork(this, ServerConnect.class, 1000, chats);
                 }
-            } catch (IOException e) {
+            } catch (IOException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
                 e.printStackTrace();
             }
         }
@@ -265,7 +345,7 @@ public class ServerConnect extends JobIntentService {
                         response = br.readLine();
                         if (response == null) return;
                         if (!response.equals("2")) return;
-                        Timestamp tmp = new Timestamp(System.currentTimeMillis());
+                        Timestamp tmp = new Timestamp(System.currentTimeMillis() - TimeZone.getDefault().getRawOffset());
                         chats.sendMessage(intent.getStringExtra("uname"),
                                 intent.getStringExtra("remail"),
                                 new Message(Message.type.valueOf(intent.getStringExtra("type")),Base64.decode(intent.getStringExtra("msg"),Base64.NO_WRAP)),

@@ -10,10 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import javax.crypto.*;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.URL;
@@ -240,15 +237,28 @@ public class ServerConnect extends JobIntentService {
                     connection.setRequestMethod("POST");
                     connection.setDoOutput(true);
                     connection.setDoInput(true);
-                    /*String msg = intent.getStringExtra("msg");
-                    Cipher encryptCipher = Cipher.getInstance("RSA");
-                    encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey);
-                    byte[] secretMessageBytes = msg.getBytes(StandardCharsets.UTF_8);
-                    msg = MainActivity.toHexString(encryptCipher.doFinal(secretMessageBytes));
-                    data = "Email=" + intent.getStringExtra("email") + "&Password=" + intent.getStringExtra("password") + "&ReceiverEmail=" + intent.getStringExtra("remail") + "&message=" + msg;
-                    out = data.getBytes(StandardCharsets.UTF_8);
+                    connection.setRequestProperty("Content-Type", "text/plain");
+                    Cipher encryptCipherRSA = Cipher.getInstance("RSA");
+                    encryptCipherRSA.init(Cipher.ENCRYPT_MODE, publicKey);
+                    Cipher encryptCipherAES = Cipher.getInstance("AES");
+                    KeyGenerator keygen = KeyGenerator.getInstance("AES");
+                    keygen.init(256);
+                    SecretKey skey = keygen.generateKey();
+                    encryptCipherAES.init(Cipher.ENCRYPT_MODE,skey);
+                    byte[] message = Base64.decode(intent.getStringExtra("msg"),Base64.NO_WRAP);
+                    byte[] messageBytes = encryptCipherAES.doFinal(message);
+                    byte[] key = skey.getEncoded();
+                    key = encryptCipherRSA.doFinal(key);
+                    data = Base64.encodeToString(key,Base64.NO_WRAP) + '-';
+                    data = Base64.encodeToString(intent.getStringExtra("email").getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP) + '-'
+                            + Base64.encodeToString(intent.getStringExtra("password").getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP) + '-'
+                            + Base64.encodeToString(intent.getStringExtra("remail").getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP) + '-'
+                            + Base64.encodeToString(intent.getStringExtra("type").getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP) + '-'
+                            + data;
+                    out = data.getBytes();
                     stream = connection.getOutputStream();
                     stream.write(out);
+                    stream.write(messageBytes);
                     if (connection.getResponseCode() == 200) {
                         in = connection.getInputStream();
                         br = new BufferedReader(new InputStreamReader(in));
@@ -256,7 +266,10 @@ public class ServerConnect extends JobIntentService {
                         if (response == null) return;
                         if (!response.equals("2")) return;
                         Timestamp tmp = new Timestamp(System.currentTimeMillis());
-                        chats.sendMessage(intent.getStringExtra("uname"), intent.getStringExtra("remail"), intent.getStringExtra("msg"), tmp);
+                        chats.sendMessage(intent.getStringExtra("uname"),
+                                intent.getStringExtra("remail"),
+                                new Message(Message.type.valueOf(intent.getStringExtra("type")),Base64.decode(intent.getStringExtra("msg"),Base64.NO_WRAP)),
+                                tmp);
                         int mode = MODE_PRIVATE;
                         if (checkUserStored(intent.getStringExtra("email"))) mode |= MODE_APPEND;
                         else {
@@ -271,19 +284,16 @@ public class ServerConnect extends JobIntentService {
                         PrintWriter pw = new PrintWriter(fout);
                         pw.println(intent.getStringExtra("remail"));
                         pw.println(intent.getStringExtra("uname"));
-                        msg = intent.getStringExtra("msg");
-                        msg = msg.replaceAll("[\r\n]", "\u259f");
-                        pw.println(msg);
+                        pw.println(intent.getStringExtra("type"));
+                        pw.println(intent.getStringExtra("msg"));
                         pw.println(tmp);
                         pw.close();
                         fout.close();
                         Intent notifyUI = new Intent();
                         notifyUI.setAction("com.example.chatit.CHATSYNC");
                         LocalBroadcastManager.getInstance(this).sendBroadcast(notifyUI);
-                    }*/
+                    }
                 }
-
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -319,16 +329,16 @@ public class ServerConnect extends JobIntentService {
     }
 
     private void LoadChats() {
-        /*try {
+        try {
             FileInputStream fin = openFileInput("msgs");
             BufferedReader br = new BufferedReader(new InputStreamReader(fin));
-            String email, uname, message, tmp;
+            String email, uname, message, tmp,type;
             while ((email = br.readLine()) != null) {
                 uname = br.readLine();
+                type = br.readLine();
                 message = br.readLine();
-                message = message.replaceAll("\u259f", "\r\n");
                 tmp = br.readLine();
-                chats.addMessage(uname, email, message, Timestamp.valueOf(tmp.substring(0, 10) + " " + tmp.substring(11, 19)));
+                chats.addMessage(uname, email, new Message(Message.type.valueOf(type),Base64.decode(message,Base64.NO_WRAP)), Timestamp.valueOf(tmp.substring(0, 10) + " " + tmp.substring(11, 19)));
             }
             br.close();
             fin.close();
@@ -337,18 +347,18 @@ public class ServerConnect extends JobIntentService {
         try {
             FileInputStream fin = openFileInput("sm");
             BufferedReader br = new BufferedReader(new InputStreamReader(fin));
-            String email, uname, message, tmp;
+            String email, uname, message, tmp,type;
             while ((email = br.readLine()) != null) {
                 uname = br.readLine();
+                type = br.readLine();
                 message = br.readLine();
-                message = message.replaceAll("\u259f", "\r\n");
                 tmp = br.readLine();
-                chats.sendMessage(uname, email, message, Timestamp.valueOf(tmp.substring(0, 10) + " " + tmp.substring(11, 19)));
+                chats.sendMessage(uname, email,  new Message(Message.type.valueOf(type),Base64.decode(message,Base64.NO_WRAP)), Timestamp.valueOf(tmp.substring(0, 10) + " " + tmp.substring(11, 19)));
             }
             br.close();
             fin.close();
         } catch (IOException e) {
-        }*/
+        }
     }
 
     private boolean checkUserStored(String email) {

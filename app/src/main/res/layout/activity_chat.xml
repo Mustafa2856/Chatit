@@ -21,7 +21,8 @@
             app:layout_constraintEnd_toStartOf="@+id/send"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintBottom_toBottomOf="@+id/send"
-            app:layout_constraintTop_toBottomOf="@+id/chat"/>
+            app:layout_constraintTop_toBottomOf="@+id/chat"
+            android:layout_marginStart="64dp"/>
 
     <Button
             android:layout_width="64dp"
@@ -90,5 +91,16 @@
             android:layout_marginTop="16dp"
             android:layout_marginBottom="16dp"
             android:textAppearance="@style/TextAppearance.AppCompat.Large"/>
+
+    <Button
+            android:layout_width="64dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/button3"
+            app:layout_constraintEnd_toStartOf="@+id/chatbox"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/chat"
+            app:layout_constraintVertical_bias="0.437"
+            app:icon="@android:drawable/ic_menu_share"
+            app:layout_constraintStart_toStartOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

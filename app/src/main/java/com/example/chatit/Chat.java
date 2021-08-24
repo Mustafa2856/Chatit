@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 import android.util.Pair;
 import android.view.Gravity;
@@ -15,6 +16,7 @@ import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +48,11 @@ public class Chat extends AppCompatActivity {
             openusrinfo.putExtra("uname", this.getIntent().getStringExtra("uname"));
             startActivityForResult(openusrinfo, 0);
         });
+        Button mediaSelect = findViewById(R.id.button3);
+        mediaSelect.setOnClickListener(v -> {
+            Intent intent = new Intent(Chat.this,Media_Select.class);
+            startActivityForResult(intent,0);
+        });
         EditText chatbox = findViewById(R.id.chatbox);
         Button send = findViewById(R.id.send);
         send.setOnClickListener(v -> {
@@ -57,7 +64,8 @@ public class Chat extends AppCompatActivity {
                 i.putExtra("password", this.getIntent().getStringExtra("password"));
                 i.putExtra("remail", this.getIntent().getStringExtra("remail"));
                 i.putExtra("uname", this.getIntent().getStringExtra("uname"));
-                i.putExtra("msg", message);
+                i.putExtra("msg", Base64.encodeToString(message.getBytes(StandardCharsets.UTF_8), Base64.NO_WRAP));
+                i.putExtra("type","TEXT");
                 ServerConnect.enqueueWork(this, ServerConnect.class, 1000, i);
             }
         });
@@ -87,7 +95,7 @@ public class Chat extends AppCompatActivity {
         for (Pair<Pair<Timestamp, Message>, Boolean> chat : chats) {
             if(chat.first.second.tp == Message.type.TEXT){
                 TextView txt = new TextView(this);
-                txt.setText(String.format("%s\n%s", chat.first.second, chat.first.first.toString().substring(11, 16)));
+                txt.setText(String.format("%s\n%s", new String(chat.first.second.data), chat.first.first.toString().substring(11, 16)));
                 txt.setTextColor(Color.BLACK);
                 txt.setPadding(10, 10, 10, 10);
                 GradientDrawable shape = new GradientDrawable();
@@ -121,7 +129,13 @@ public class Chat extends AppCompatActivity {
 
     private void fillChats() {
         chats = new ArrayList<>();
-        ArrayList<Pair<Timestamp, Message>> userChats = ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail"));
+        ArrayList<Pair<Timestamp, Message>> userChats = null;
+        try{
+            userChats = ServerConnect.getChats().messages.get(this.getIntent().getStringExtra("remail"));
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
         if (userChats != null) {
             for (Pair<Timestamp, Message> m : userChats) {
                 chats.add(new Pair<>(new Pair<>(m.first, m.second), false));

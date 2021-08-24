@@ -16,6 +16,11 @@
         <activity android:name=".User_info">
         </activity>
         <activity
+                android:name=".Media_Select"
+                android:theme="@style/Theme.Chatit.NoActionBar"
+                android:label="Popup" >
+        </activity>
+        <activity
                 android:name=".Select_User"
                 android:label="@string/title_activity_select__user"
                 android:theme="@style/Theme.Chatit.NoActionBar.NoActionBar">
@@ -40,6 +45,8 @@
                 android:label="@string/title_activity_chatlist"
                 android:theme="@style/Theme.Chatit.NoActionBar.NoActionBar">
         </activity>
+
+
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

@@ -9,6 +9,16 @@
     <Button
             android:layout_width="64dp"
             android:layout_height="64dp"
+            android:id="@+id/button6"
+            app:icon="@android:drawable/ic_menu_gallery"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_marginTop="8dp"
+            app:layout_constraintStart_toEndOf="@+id/button5"
+            android:layout_marginStart="8dp"/>
+
+    <Button
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:id="@+id/button7"
             app:icon="@android:drawable/presence_audio_online"
             app:layout_constraintTop_toBottomOf="@+id/button4"
@@ -32,7 +42,7 @@
             android:layout_width="64dp"
             android:layout_height="64dp"
             android:id="@+id/button5"
-            app:icon="@android:drawable/ic_menu_gallery"
+            app:icon="@android:drawable/presence_video_online"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginTop="8dp"
             app:layout_constraintStart_toEndOf="@+id/button4"

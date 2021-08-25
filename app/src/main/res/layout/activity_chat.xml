@@ -10,7 +10,8 @@
         android:layoutMode="clipBounds"
         app:layout_scrollFlags="scroll"
         android:overScrollMode="never"
-        android:scrollbars="none">
+        android:scrollbars="none"
+        android:id="@+id/base_layout">
 
     <EditText
             android:layout_width="0dp"

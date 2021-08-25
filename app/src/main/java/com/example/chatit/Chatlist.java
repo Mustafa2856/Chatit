@@ -87,13 +87,10 @@ public class Chatlist extends AppCompatActivity {
         });
         LocalBroadcastManager.getInstance(this).registerReceiver(reciever, new IntentFilter("com.example.chatit.CHATSYNC"));
         Intent loadChat = new Intent(this, ServerConnect.class);
+        loadChat.putExtra("email", this.getIntent().getStringExtra("email"));
+        loadChat.putExtra("password", this.getIntent().getStringExtra("password"));
         loadChat.setAction("LOADCHATOFFLINE");
         ServerConnect.enqueueWork(this, ServerConnect.class, 1000, loadChat);
-        Intent chatsync = new Intent(this, ServerConnect.class);
-        chatsync.setAction("CHATS");
-        chatsync.putExtra("email", this.getIntent().getStringExtra("email"));
-        chatsync.putExtra("password", this.getIntent().getStringExtra("password"));
-        ServerConnect.enqueueWork(this, ServerConnect.class, 1000, chatsync);
     }
 
     @Override

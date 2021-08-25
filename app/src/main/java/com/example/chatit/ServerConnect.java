@@ -6,6 +6,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.app.JobIntentService;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.room.Room;
 import com.google.android.gms.common.util.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,6 +24,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.TimeZone;
 
 /**
@@ -257,7 +259,7 @@ public class ServerConnect extends JobIntentService {
                         Timestamp tmp = Timestamp.valueOf(timestamp);
                         chats.addMessage(uname,email,new Message(Message.type.valueOf(type),msgBytes),tmp);
                         int mode = MODE_PRIVATE;
-                        if (checkUserStored(intent.getStringExtra("email"))) mode |= MODE_APPEND;
+                        if (checkdbStored(intent.getStringExtra("email"))) mode |= MODE_APPEND;
                         else {
                             chats = new Chats();
                             FileOutputStream fout = openFileOutput("usr", MODE_PRIVATE);
@@ -266,13 +268,41 @@ public class ServerConnect extends JobIntentService {
                             fout.write(intent.getStringExtra("password").getBytes(StandardCharsets.UTF_8));
                             fout.close();
                         }
-                        FileOutputStream fout = openFileOutput("msgs", mode);
+                        //TODO : Use database
+                        MsgDatabase db = null;
+                        try {
+                            db = Room.databaseBuilder(this, MsgDatabase.class, "msg.db")
+                                    .createFromFile(getDatabasePath("msg.db")).build();
+                            Messages mssg = new Messages();
+                            mssg.email = email;
+                            mssg.message = uname;
+                            mssg.tmp = timestamp;
+                            mssg.type = Message.type.valueOf(type);
+                            mssg.message = msg;
+                            mssg.Sent = false;
+                            db.messagesDao().InsertAll(mssg);
+                            db.close();
+                        }catch(Exception e){
+                            db = Room.databaseBuilder(this,MsgDatabase.class,"msg.db").build();
+                            Messages mssg = new Messages();
+                            mssg.email = email;
+                            mssg.message = uname;
+                            mssg.tmp = timestamp;
+                            mssg.type = Message.type.valueOf(type);
+                            mssg.message = msg;
+                            mssg.Sent = false;
+                            db.messagesDao().InsertAll(mssg);
+                            db.close();
+                        }
+
+                        /*FileOutputStream fout = openFileOutput("msgs", mode);
                         PrintWriter pw = new PrintWriter(fout);
                         pw.println(email);
                         pw.println(uname);
                         pw.println(type);
+                        pw.println(timestamp);
                         pw.println(msg);
-                        pw.println(tmp);
+                        */
                         Intent notifyUI = new Intent();
                         notifyUI.setAction("com.example.chatit.CHATSYNC");
                         LocalBroadcastManager.getInstance(this).sendBroadcast(notifyUI);
@@ -283,7 +313,7 @@ public class ServerConnect extends JobIntentService {
                     chats.putExtra("password", intent.getStringExtra("password"));
                     ServerConnect.enqueueWork(this, ServerConnect.class, 1000, chats);
                 }
-            } catch (IOException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -292,6 +322,11 @@ public class ServerConnect extends JobIntentService {
             Intent notifyUI = new Intent();
             notifyUI.setAction("com.example.chatit.CHATSYNC");
             LocalBroadcastManager.getInstance(this).sendBroadcast(notifyUI);
+            Intent chatsync = new Intent(this, ServerConnect.class);
+            chatsync.setAction("CHATS");
+            chatsync.putExtra("email", intent.getStringExtra("email"));
+            chatsync.putExtra("password", intent.getStringExtra("password"));
+            ServerConnect.enqueueWork(this, ServerConnect.class, 1000, chatsync);
         }
         else if (op == Operations.MESSAGE) {
             try {
@@ -351,7 +386,7 @@ public class ServerConnect extends JobIntentService {
                                 new Message(Message.type.valueOf(intent.getStringExtra("type")),Base64.decode(intent.getStringExtra("msg"),Base64.NO_WRAP)),
                                 tmp);
                         int mode = MODE_PRIVATE;
-                        if (checkUserStored(intent.getStringExtra("email"))) mode |= MODE_APPEND;
+                        if (checkdbStored(intent.getStringExtra("email"))) mode |= MODE_APPEND;
                         else {
                             chats = new Chats();
                             FileOutputStream fout = openFileOutput("usr", MODE_PRIVATE);
@@ -360,15 +395,32 @@ public class ServerConnect extends JobIntentService {
                             fout.write(intent.getStringExtra("password").getBytes(StandardCharsets.UTF_8));
                             fout.close();
                         }
-                        FileOutputStream fout = openFileOutput("sm", mode);
-                        PrintWriter pw = new PrintWriter(fout);
-                        pw.println(intent.getStringExtra("remail"));
-                        pw.println(intent.getStringExtra("uname"));
-                        pw.println(intent.getStringExtra("type"));
-                        pw.println(intent.getStringExtra("msg"));
-                        pw.println(tmp);
-                        pw.close();
-                        fout.close();
+                        MsgDatabase db = null;
+                        try {
+                            db = Room.databaseBuilder(this, MsgDatabase.class, "msg.db")
+                                    .createFromFile(getDatabasePath("msg.db")).build();
+                            Messages msg = new Messages();
+                            msg.email = intent.getStringExtra("remail");
+                            msg.message = intent.getStringExtra("uname");
+                            msg.tmp = tmp.toString();
+                            msg.type = Message.type.valueOf(intent.getStringExtra("type"));
+                            msg.message = intent.getStringExtra("msg");
+                            msg.Sent = true;
+                            db.messagesDao().InsertAll(msg);
+                            db.close();
+                        }catch(Exception e){
+                            db = Room.databaseBuilder(this,MsgDatabase.class,"msg.db").build();
+                            Messages msg = new Messages();
+                            msg.email = intent.getStringExtra("remail");
+                            msg.message = intent.getStringExtra("uname");
+                            msg.tmp = tmp.toString();
+                            msg.type = Message.type.valueOf(intent.getStringExtra("type"));
+                            msg.message = intent.getStringExtra("msg");
+                            msg.Sent = true;
+                            db.messagesDao().InsertAll(msg);
+                            db.close();
+                        }
+
                         Intent notifyUI = new Intent();
                         notifyUI.setAction("com.example.chatit.CHATSYNC");
                         LocalBroadcastManager.getInstance(this).sendBroadcast(notifyUI);
@@ -410,38 +462,76 @@ public class ServerConnect extends JobIntentService {
 
     private void LoadChats() {
         try {
+            /*
             FileInputStream fin = openFileInput("msgs");
-            BufferedReader br = new BufferedReader(new InputStreamReader(fin));
+            BufferedReader br = new BufferedReader(new InputStreamReader(fin),100 * 1024 * 1024);
             String email, uname, message, tmp,type;
             while ((email = br.readLine()) != null) {
                 uname = br.readLine();
                 type = br.readLine();
-                message = br.readLine();
                 tmp = br.readLine();
+                message = br.readLine();
                 chats.addMessage(uname, email, new Message(Message.type.valueOf(type),Base64.decode(message,Base64.NO_WRAP)), Timestamp.valueOf(tmp.substring(0, 10) + " " + tmp.substring(11, 19)));
             }
             br.close();
             fin.close();
-        } catch (IOException e) {
+            */
+            MsgDatabase db;
+            try {
+                db = Room.databaseBuilder(this, MsgDatabase.class, "msg.db")
+                        .createFromFile(getDatabasePath("msg.db")).build();
+                List<Messages> msgs = db.messagesDao().getAllSent(false);
+                for(Messages Msg:msgs){
+                    chats.addMessage(
+                            Msg.uname,Msg.email,new Message(Msg.type,Base64.decode(Msg.message.getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP)),Timestamp.valueOf(Msg.tmp)
+                    );
+                }
+                db.close();
+            }catch(Exception e){
+                db = Room.databaseBuilder(this,MsgDatabase.class,"msg.db").build();
+                db.close();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         try {
+            /*
             FileInputStream fin = openFileInput("sm");
             BufferedReader br = new BufferedReader(new InputStreamReader(fin));
             String email, uname, message, tmp,type;
             while ((email = br.readLine()) != null) {
                 uname = br.readLine();
                 type = br.readLine();
-                message = br.readLine();
                 tmp = br.readLine();
+                message = br.readLine();
                 chats.sendMessage(uname, email,  new Message(Message.type.valueOf(type),Base64.decode(message,Base64.NO_WRAP)), Timestamp.valueOf(tmp.substring(0, 10) + " " + tmp.substring(11, 19)));
             }
             br.close();
             fin.close();
-        } catch (IOException e) {
+            */
+            MsgDatabase db;
+            try {
+                db = Room.databaseBuilder(this, MsgDatabase.class, "msg.db")
+                        .createFromFile(getDatabasePath("msg.db")).build();
+                List<Messages> msgs = db.messagesDao().getAllSent(true);
+                for(Messages Msg:msgs){
+                    chats.sendMessage(
+                            Msg.uname,Msg.email,new Message(Msg.type,Base64.decode(Msg.message.getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP)),Timestamp.valueOf(Msg.tmp)
+                    );
+                }
+                db.close();
+            }catch(Exception e){
+                db = Room.databaseBuilder(this,MsgDatabase.class,"msg.db").build();
+                db.close();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    private boolean checkUserStored(String email) {
+    private boolean checkdbStored(String email) {
         String chkmail;
         try {
             chkmail = new BufferedReader(new InputStreamReader(openFileInput("usr"))).readLine();

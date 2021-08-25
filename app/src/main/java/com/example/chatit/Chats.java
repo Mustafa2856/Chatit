@@ -21,12 +21,12 @@ public class Chats {
 
     public void addMessage(String uname, String email, Message message, Timestamp tmp) {
         if (usernames == null) usernames = new HashMap<>();
-        if (messages == null) display_list = new HashMap<>();
-        if (display_list == null) messages = new HashMap<>();
+        if (messages == null) messages = new HashMap<>();
+        if (display_list == null) display_list = new HashMap<>();
         if (sent == null) sent = new HashMap<>();
         if (usernames.get(email) == null) {
             usernames.put(email, uname);
-            messages.put(email, new ArrayList<>());
+            if (messages.get(email) == null) messages.put(email, new ArrayList<>());
             Objects.requireNonNull(messages.get(email)).add(new Pair<>(tmp, message));
             display_list.put(email, new Pair<>(tmp, message));
         } else {
@@ -35,6 +35,7 @@ public class Chats {
             if (display_list.get(email) != null && Objects.requireNonNull(display_list.get(email)).first.compareTo(tmp) <= 0)
                 display_list.put(email, new Pair<>(tmp, message));
         }
+
         if(tmp.after(this.tmp))this.tmp = tmp;
     }
 
